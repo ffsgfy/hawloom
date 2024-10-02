@@ -28,3 +28,4 @@ jobs:
           name: hawloom
           path: ./hawloom
           retention-days: 7
+          overwrite: true
