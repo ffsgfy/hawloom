@@ -1,0 +1,18 @@
+name: hawloom
+
+services:
+  hawloom:
+    build: .
+    volumes: []
+    networks:
+      - hawloom-net
+    restart: unless-stopped
+    container_name: hawloom
+
+volumes: {}
+
+networks:
+  hawloom-net:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: docker-hawloom
