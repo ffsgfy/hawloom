@@ -39,4 +39,4 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           push: true
-          tags: ffsgfy:hawloom/latest
+          tags: ffsgfy/hawloom:latest
