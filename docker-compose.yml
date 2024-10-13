@@ -1,9 +1,18 @@
 name: hawloom
 
 x-hawloom-base: &hawloom-base
+  environment:
+    POSTGRES_URI: ${POSTGRES_URI}
+  ports:
+    - "[::1]:1323:1323"
   volumes: []
   networks:
     - hawloom-net
+  healthcheck:
+    test: ["CMD", "curl", "-f", "http://localhost:1323/healthcheck"]
+    interval: 5s
+    timeout: 5s
+    retries: 2
   restart: unless-stopped
   depends_on:
     db:
