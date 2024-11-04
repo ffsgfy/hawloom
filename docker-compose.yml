@@ -2,14 +2,18 @@ name: hawloom
 
 x-hawloom-base: &hawloom-base
   environment:
-    POSTGRES_URI: ${POSTGRES_URI}
+    POSTGRES_USER: ${POSTGRES_USER}
+    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    POSTGRES_HOST: ${POSTGRES_HOST}
+    POSTGRES_PORT: ${POSTGRES_PORT}
+    HAWLOOM_PORT: ${HAWLOOM_PORT}
   ports:
-    - "[::1]:1323:1323"
+    - "[::1]:${HAWLOOM_PORT}:${HAWLOOM_PORT}"
   volumes: []
   networks:
     - hawloom-net
   healthcheck:
-    test: ["CMD", "curl", "-f", "http://localhost:1323/healthcheck"]
+    test: ["CMD", "curl", "-f", "http://localhost:${HAWLOOM_PORT}/healthcheck"]
     interval: 5s
     timeout: 5s
     retries: 2
@@ -49,6 +53,9 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PGPORT: ${POSTGRES_PORT}
+    ports:
+      - "[::1]:${POSTGRES_PORT}:${POSTGRES_PORT}"
     volumes:
       - db-data:/var/lib/postgresql/data
     networks:

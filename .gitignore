@@ -167,3 +167,4 @@ dist
 # End of https://www.toptal.com/developers/gitignore/api/go,node
 
 .env
+.envrc

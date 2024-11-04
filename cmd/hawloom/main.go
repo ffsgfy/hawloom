@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -16,7 +17,20 @@ import (
 )
 
 func main() {
-	s, err := api.NewState("postgres", os.Getenv("POSTGRES_URI"))
+	dbUser := os.Getenv("POSTGRES_USER")
+	dbPassword := os.Getenv("POSTGRES_PASSWORD")
+	dbHost := os.Getenv("POSTGRES_HOST")
+	dbPort := os.Getenv("POSTGRES_PORT")
+	dbUri := fmt.Sprintf(
+		"postgres://%s:%s@%s:%s/%s?sslmode=disable",
+		dbUser,
+		dbPassword,
+		dbHost,
+		dbPort,
+		dbUser,
+	)
+
+	s, err := api.NewState("postgres", dbUri)
 	if err != nil {
 		panic(err)
 	}
@@ -28,21 +42,28 @@ func main() {
 }
 
 func run(e *echo.Echo) {
-	sigintChan := make(chan os.Signal, 1)
-	signal.Notify(sigintChan, os.Interrupt)
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer cancel()
+
+	port := os.Getenv("HAWLOOM_PORT")
+	if len(port) == 0 {
+		e.Logger.Fatal(errors.New("server port not set"))
+		cancel()
+	}
 
 	go func() {
-		if err := e.Start(":1323"); err != nil && err != http.ErrServerClosed {
-			e.Logger.Fatal(fmt.Errorf("shutting down: %w", err))
+		if err := e.Start(fmt.Sprintf(":%s", port)); err != nil && err != http.ErrServerClosed {
+			e.Logger.Fatal(fmt.Errorf("failed to start server: %w", err))
+			cancel()
 		}
 	}()
 
-	<-sigintChan
+	<-ctx.Done()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	if err := e.Shutdown(ctx); err != nil {
-		e.Logger.Fatal(err)
+		e.Logger.Fatal(fmt.Errorf("failed to shut down server: %w", err))
 		e.Close()
 	}
 }
