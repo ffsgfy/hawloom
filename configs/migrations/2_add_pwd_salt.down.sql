@@ -1,3 +1,0 @@
-BEGIN;
-    ALTER TABLE account DROP COLUMN pwd_salt;
-COMMIT;

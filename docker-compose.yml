@@ -35,19 +35,6 @@ services:
     build: .
     profiles: [local]
 
-  db-migrate:
-    image: migrate/migrate:4
-    command:
-      - "-path=/migrations/"
-      - "-database=${POSTGRES_URI}"
-      - "up"
-    volumes:
-      - ./configs/migrations/:/migrations/
-    networks:
-      - hawloom-net
-    depends_on:
-      - db
-
   db:
     image: postgres:17-alpine
     environment:
@@ -61,6 +48,19 @@ services:
     networks:
       - hawloom-net
     restart: unless-stopped
+
+  db-migrate:
+    image: migrate/migrate:4
+    command:
+      - "-path=/migrations/"
+      - "-database=${POSTGRES_URI}"
+      - "up"
+    volumes:
+      - ./configs/migrations/:/migrations/
+    networks:
+      - hawloom-net
+    depends_on:
+      - db
 
 volumes:
   db-data: {}
