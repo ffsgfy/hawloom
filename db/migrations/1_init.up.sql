@@ -3,6 +3,7 @@ BEGIN;
         id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
         name VARCHAR(36) UNIQUE NOT NULL,
         created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-        password_hash BYTEA NOT NULL
+        password_hash BYTEA NOT NULL,
+        some_extra_field INT NOT NULL DEFAULT 0
     );
 COMMIT;
