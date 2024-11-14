@@ -16,11 +16,11 @@ x-hawloom-base: &hawloom-base
     test: ["CMD", "curl", "-f", "http://localhost:${HAWLOOM_PORT}/healthcheck"]
     interval: 5s
     timeout: 5s
-    retries: 2
+    retries: 3
   restart: unless-stopped
   depends_on:
     db:
-      condition: service_started
+      condition: service_healthy
     db-migrate:
       condition: service_completed_successfully
 
@@ -47,6 +47,13 @@ services:
       - db-data:/var/lib/postgresql/data
     networks:
       - hawloom-net
+    healthcheck:
+      test: ["CMD", "pg_isready"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+      start_interval: 2s
     restart: unless-stopped
 
   db-migrate:
@@ -56,11 +63,21 @@ services:
       - "-database=${POSTGRES_URI}"
       - "up"
     volumes:
-      - ./configs/migrations/:/migrations/
+      - ./db/migrations/:/migrations/:ro
     networks:
       - hawloom-net
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+
+  sqlc:
+    image: sqlc/sqlc:1.27.0
+    command:
+      - "diff"
+    volumes:
+      - ./db/:/db/:ro
+      - ./internal/db/:/internal/db/
+      - ./sqlc.yaml/:/sqlc.yaml/:ro
 
 volumes:
   db-data: {}

@@ -12,10 +12,10 @@ import (
 
 func HandleHealthcheck(s *api.State) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(c.Request().Context(), 5*time.Second)
 		defer cancel()
 
-		err := s.DB.PingContext(ctx)
+		err := s.Pool.Ping(ctx)
 		if err != nil {
 			return c.String(http.StatusInternalServerError, err.Error())
 		}

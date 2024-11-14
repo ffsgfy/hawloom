@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
-	_ "github.com/lib/pq"
 
 	"github.com/ffsgfy/hawloom/internal/api"
 	"github.com/ffsgfy/hawloom/internal/api/handlers"
@@ -30,7 +29,7 @@ func main() {
 		dbUser,
 	)
 
-	s, err := api.NewState("postgres", dbUri)
+	s, err := api.NewState(context.Background(), dbUri)
 	if err != nil {
 		panic(err)
 	}

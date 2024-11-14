@@ -1,21 +1,27 @@
 package api
 
 import (
-	"github.com/jmoiron/sqlx"
+	"context"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/ffsgfy/hawloom/internal/db"
 )
 
 type State struct {
-	DB *sqlx.DB
+	Pool    *pgxpool.Pool
+	Queries *db.Queries
 }
 
-func NewState(dbDriver, dbUri string) (State, error) {
-	db, err := sqlx.Connect(dbDriver, dbUri)
+func NewState(ctx context.Context, dbUri string) (State, error) {
+	pool, err := pgxpool.New(ctx, dbUri)
 	if err != nil {
 		return State{}, err
 	}
 
 	s := State{
-		DB: db,
+		Pool:    pool,
+		Queries: db.New(pool),
 	}
 
 	return s, nil

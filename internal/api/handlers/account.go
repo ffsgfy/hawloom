@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"database/sql"
 	"errors"
 	"net/http"
 	"time"
@@ -10,16 +11,16 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"github.com/ffsgfy/hawloom/internal/api"
-	"github.com/ffsgfy/hawloom/internal/models"
+	"github.com/ffsgfy/hawloom/internal/db"
 )
 
 type accountGetRequest struct {
-	ID   *int    `query:"id"`
+	ID   *int32  `query:"id"`
 	Name *string `query:"name"`
 }
 
 type accountGetResponse struct {
-	ID        int       `json:"id"`
+	ID        int32     `json:"id"`
 	Name      string    `json:"name"`
 	CreatedAt time.Time `json:"created_at"`
 }
@@ -39,18 +40,19 @@ func HandleAccountGet(s *api.State) echo.HandlerFunc {
 		}
 
 		var err error
-		var account *models.Account
+		var account *db.Account
 
+		ctx := c.Request().Context()
 		if req.ID != nil {
-			account, err = models.FindAccountByID(s.DB, *req.ID)
+			account, err = s.Queries.FindAccountByID(ctx, *req.ID)
 		}
 		if req.Name != nil {
-			account, err = models.FindAccountByName(s.DB, *req.Name)
+			account, err = s.Queries.FindAccountByName(ctx, *req.Name)
 		}
 
 		if err != nil {
-			if errors.Is(err, models.AccountNotFoundError) {
-				return c.String(http.StatusNotFound, err.Error())
+			if errors.Is(err, sql.ErrNoRows) {
+				return c.String(http.StatusNotFound, "account not found")
 			}
 			return c.String(http.StatusInternalServerError, err.Error())
 		}
@@ -61,7 +63,7 @@ func HandleAccountGet(s *api.State) echo.HandlerFunc {
 		return c.JSON(http.StatusOK, &accountGetResponse{
 			ID:        account.ID,
 			Name:      account.Name,
-			CreatedAt: account.CreatedAt,
+			CreatedAt: account.CreatedAt.Time,
 		})
 	}
 }
@@ -72,7 +74,7 @@ type accountPostRequest struct {
 }
 
 type accountPostResponse struct {
-	ID int `json:"id"`
+	ID int32 `json:"id"`
 }
 
 func HandleAccountPost(s *api.State) echo.HandlerFunc {
@@ -90,10 +92,13 @@ func HandleAccountPost(s *api.State) echo.HandlerFunc {
 			return c.String(http.StatusInternalServerError, err.Error())
 		}
 
-		id, err := models.CreateAccount(s.DB, req.Name, passwordHash)
+		id, err := s.Queries.CreateAccount(c.Request().Context(), &db.CreateAccountParams{
+			Name:         req.Name,
+			PasswordHash: passwordHash,
+		})
 		if err != nil {
-			if errors.Is(err, models.AccountNameTakenError) {
-				return c.String(http.StatusConflict, err.Error())
+			if errors.Is(err, sql.ErrNoRows) {
+				return c.String(http.StatusConflict, "account name already taken")
 			}
 			return c.String(http.StatusInternalServerError, err.Error())
 		}
