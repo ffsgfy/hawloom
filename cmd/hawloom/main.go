@@ -36,7 +36,7 @@ func main() {
 	}
 
 	e := echo.New()
-	e.GET("/healthcheck", handlers.HandleHealthcheck(&s))
+	handlers.AddHandlers(e, &s)
 
 	run(e)
 }

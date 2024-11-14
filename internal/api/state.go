@@ -5,7 +5,7 @@ import (
 )
 
 type State struct {
-	Db *sqlx.DB
+	DB *sqlx.DB
 }
 
 func NewState(dbDriver, dbUri string) (State, error) {
@@ -15,7 +15,7 @@ func NewState(dbDriver, dbUri string) (State, error) {
 	}
 
 	s := State{
-		Db: db,
+		DB: db,
 	}
 
 	return s, nil
