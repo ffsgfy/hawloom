@@ -13,16 +13,14 @@ type State struct {
 	Queries *db.Queries
 }
 
-func NewState(ctx context.Context, dbUri string) (State, error) {
-	pool, err := pgxpool.New(ctx, dbUri)
+func NewState(ctx context.Context, dbURI string) (*State, error) {
+	pool, err := pgxpool.New(ctx, dbURI)
 	if err != nil {
-		return State{}, err
+		return nil, err
 	}
 
-	s := State{
+	return &State{
 		Pool:    pool,
 		Queries: db.New(pool),
-	}
-
-	return s, nil
+	}, nil
 }
