@@ -1,4 +1,4 @@
-package middlewares
+package middleware
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ import (
 	"github.com/ffsgfy/hawloom/internal/utils/ctxlog"
 )
 
-func SetRequestID(next echo.HandlerFunc) echo.HandlerFunc {
+func SetRequestContext(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		reqid := fmt.Sprintf("%016x", rand.Uint64())
 		req := c.Request()
@@ -21,28 +21,35 @@ func SetRequestID(next echo.HandlerFunc) echo.HandlerFunc {
 
 func LogAccess(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		start := time.Now()
-		err := next(c)
-		duration := time.Since(start)
-		durationMilli := float64(duration.Microseconds()) / 1000.0
-
+		var err error
 		req := c.Request()
 		res := c.Response()
+		start := time.Now()
 
-		// TODO: also log user ip, identity
-		tags := make([]any, 0, 10)
-		tags = append(
-			tags,
-			"path", c.Path(),
-			"status", res.Status,
-			"dt", durationMilli,
-			"size", res.Size,
-		)
-		if err != nil {
-			tags = append(tags, "err", err)
+		res.After(func() {
+			duration := time.Since(start)
+			durationMilli := float64(duration.Microseconds()) / 1000.0
+
+			// TODO: also log user ip, identity
+			tags := make([]any, 0, 10)
+			tags = append(
+				tags,
+				"path", c.Path(),
+				"status", res.Status,
+				"dt", durationMilli,
+				"size", res.Size,
+			)
+			if err != nil {
+				tags = append(tags, "err", err)
+			}
+
+			ctxlog.Info(req.Context(), "HTTP "+req.Method, tags...)
+		})
+
+		err = next(c)
+		if res.Committed && err != nil {
+			ctxlog.Error2(req.Context(), "post-response error", err)
 		}
-
-		ctxlog.Info(req.Context(), "HTTP "+req.Method, tags...)
 		return err
 	}
 }

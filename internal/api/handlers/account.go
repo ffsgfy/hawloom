@@ -14,6 +14,15 @@ import (
 	"github.com/ffsgfy/hawloom/internal/db"
 )
 
+var (
+	errNoAccountIDOrName    = echo.NewHTTPError(http.StatusBadRequest, "either account id or name required")
+	errBothAccountIDAndName = echo.NewHTTPError(http.StatusBadRequest, "both account id and name not supported")
+	errAccountNotFound      = echo.NewHTTPError(http.StatusNotFound, "account not found")
+	errAccountWasNil        = echo.NewHTTPError(http.StatusInternalServerError, "account was nil")
+	errPasswordTooLong      = echo.NewHTTPError(http.StatusBadRequest, "password too long")
+	errAccountNameTaken     = echo.NewHTTPError(http.StatusConflict, "account name already taken")
+)
+
 type accountGetRequest struct {
 	ID   *int32  `query:"id"`
 	Name *string `query:"name"`
@@ -29,14 +38,14 @@ func HandleAccountGet(s *api.State) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		req := accountGetRequest{}
 		if err := c.Bind(&req); err != nil {
-			return c.String(http.StatusBadRequest, err.Error())
+			return onBindError(err)
 		}
 
 		if req.ID == nil && req.Name == nil {
-			return c.String(http.StatusBadRequest, "either account id or name required")
+			return errNoAccountIDOrName
 		}
 		if req.ID != nil && req.Name != nil {
-			return c.String(http.StatusBadRequest, "both account id and name not supported")
+			return errBothAccountIDAndName
 		}
 
 		var err error
@@ -52,12 +61,12 @@ func HandleAccountGet(s *api.State) echo.HandlerFunc {
 
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
-				return c.String(http.StatusNotFound, "account not found")
+				return errAccountNotFound
 			}
-			return c.String(http.StatusInternalServerError, err.Error())
+			return err
 		}
 		if account == nil {
-			return c.String(http.StatusInternalServerError, "account was nil")
+			return errAccountWasNil
 		}
 
 		return c.JSON(http.StatusOK, &accountGetResponse{
@@ -81,15 +90,15 @@ func HandleAccountPost(s *api.State) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		req := accountPostRequest{}
 		if err := c.Bind(&req); err != nil {
-			return c.String(http.StatusBadRequest, err.Error())
+			return onBindError(err)
 		}
 
 		passwordHash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 		if err != nil {
 			if errors.Is(err, bcrypt.ErrPasswordTooLong) {
-				return c.String(http.StatusBadRequest, "password too long")
+				return errPasswordTooLong
 			}
-			return c.String(http.StatusInternalServerError, err.Error())
+			return err
 		}
 
 		id, err := s.Queries.CreateAccount(c.Request().Context(), &db.CreateAccountParams{
@@ -98,9 +107,9 @@ func HandleAccountPost(s *api.State) echo.HandlerFunc {
 		})
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
-				return c.String(http.StatusConflict, "account name already taken")
+				return errAccountNameTaken
 			}
-			return c.String(http.StatusInternalServerError, err.Error())
+			return err
 		}
 
 		return c.JSON(http.StatusOK, &accountPostResponse{
