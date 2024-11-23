@@ -9,6 +9,17 @@ import (
 	"context"
 )
 
+const checkAccountName = `-- name: CheckAccountName :one
+SELECT COUNT(1) FROM account WHERE name = $1
+`
+
+func (q *Queries) CheckAccountName(ctx context.Context, name string) (int64, error) {
+	row := q.db.QueryRow(ctx, checkAccountName, name)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createAccount = `-- name: CreateAccount :one
 INSERT INTO account (name, password_hash)
 VALUES ($1, $2)

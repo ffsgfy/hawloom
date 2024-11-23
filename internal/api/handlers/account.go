@@ -1,26 +1,12 @@
 package handlers
 
 import (
-	"database/sql"
-	"errors"
 	"net/http"
 	"time"
-
-	"golang.org/x/crypto/bcrypt"
 
 	"github.com/labstack/echo/v4"
 
 	"github.com/ffsgfy/hawloom/internal/api"
-	"github.com/ffsgfy/hawloom/internal/db"
-)
-
-var (
-	errNoAccountIDOrName    = echo.NewHTTPError(http.StatusBadRequest, "either account id or name required")
-	errBothAccountIDAndName = echo.NewHTTPError(http.StatusBadRequest, "both account id and name not supported")
-	errAccountNotFound      = echo.NewHTTPError(http.StatusNotFound, "account not found")
-	errAccountWasNil        = echo.NewHTTPError(http.StatusInternalServerError, "account was nil")
-	errPasswordTooLong      = echo.NewHTTPError(http.StatusBadRequest, "password too long")
-	errAccountNameTaken     = echo.NewHTTPError(http.StatusConflict, "account name already taken")
 )
 
 type accountGetRequest struct {
@@ -38,35 +24,12 @@ func HandleAccountGet(s *api.State) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		req := accountGetRequest{}
 		if err := c.Bind(&req); err != nil {
-			return onBindError(err)
+			return api.OnBindError(err)
 		}
 
-		if req.ID == nil && req.Name == nil {
-			return errNoAccountIDOrName
-		}
-		if req.ID != nil && req.Name != nil {
-			return errBothAccountIDAndName
-		}
-
-		var err error
-		var account *db.Account
-
-		ctx := c.Request().Context()
-		if req.ID != nil {
-			account, err = s.Queries.FindAccountByID(ctx, *req.ID)
-		}
-		if req.Name != nil {
-			account, err = s.Queries.FindAccountByName(ctx, *req.Name)
-		}
-
+		account, err := s.Ctx(c.Request().Context()).FindAccount(req.ID, req.Name)
 		if err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				return errAccountNotFound
-			}
 			return err
-		}
-		if account == nil {
-			return errAccountWasNil
 		}
 
 		return c.JSON(http.StatusOK, &accountGetResponse{
@@ -78,8 +41,8 @@ func HandleAccountGet(s *api.State) echo.HandlerFunc {
 }
 
 type accountPostRequest struct {
-	Name     string `query:"name" form:"name"`
-	Password string `query:"password" form:"password"`
+	Name     string `form:"name"`
+	Password string `form:"password"`
 }
 
 type accountPostResponse struct {
@@ -90,25 +53,11 @@ func HandleAccountPost(s *api.State) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		req := accountPostRequest{}
 		if err := c.Bind(&req); err != nil {
-			return onBindError(err)
+			return api.OnBindError(err)
 		}
 
-		passwordHash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+		id, err := s.Ctx(c.Request().Context()).CreateAccount(req.Name, req.Password)
 		if err != nil {
-			if errors.Is(err, bcrypt.ErrPasswordTooLong) {
-				return errPasswordTooLong
-			}
-			return err
-		}
-
-		id, err := s.Queries.CreateAccount(c.Request().Context(), &db.CreateAccountParams{
-			Name:         req.Name,
-			PasswordHash: passwordHash,
-		})
-		if err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				return errAccountNameTaken
-			}
 			return err
 		}
 

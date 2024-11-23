@@ -9,3 +9,6 @@ SELECT * FROM account WHERE id = $1;
 
 -- name: FindAccountByName :one
 SELECT * FROM account WHERE name = $1;
+
+-- name: CheckAccountName :one
+SELECT COUNT(1) FROM account WHERE name = $1;

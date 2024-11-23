@@ -24,3 +24,12 @@ func NewState(ctx context.Context, dbURI string) (*State, error) {
 		Queries: db.New(pool),
 	}, nil
 }
+
+type StateCtx struct {
+	*State
+	Ctx context.Context
+}
+
+func (s *State) Ctx(ctx context.Context) *StateCtx {
+	return &StateCtx{State: s, Ctx: ctx}
+}
