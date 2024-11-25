@@ -14,3 +14,9 @@ type Account struct {
 	CreatedAt    pgtype.Timestamp `db:"created_at"`
 	PasswordHash []byte           `db:"password_hash"`
 }
+
+type Key struct {
+	ID        int32            `db:"id"`
+	CreatedAt pgtype.Timestamp `db:"created_at"`
+	Data      []byte           `db:"data"`
+}

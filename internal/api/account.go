@@ -7,6 +7,12 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/ffsgfy/hawloom/internal/db"
+	"github.com/ffsgfy/hawloom/internal/utils/ctxlog"
+)
+
+const (
+	AccountNameMinLength     = 4
+	AccountPasswordMinLength = 6
 )
 
 func (sc *StateCtx) FindAccount(id *int32, name *string) (*db.Account, error) {
@@ -34,43 +40,79 @@ func (sc *StateCtx) FindAccount(id *int32, name *string) (*db.Account, error) {
 		return nil, err
 	}
 	if account == nil {
-		return nil, ErrAccountWasNil
+		return nil, errors.New("account was nil")
 	}
 
 	return account, nil
 }
 
-func (sc *StateCtx) CreateAccount(name, password string) (int32, error) {
-	if len(name) < 4 {
-		return 0, ErrAccountNameTooShort
+func (sc *StateCtx) CreateAccount(name, password string) (*db.Account, error) {
+	if len(name) < AccountNameMinLength {
+		return nil, ErrAccountNameTooShort
+	}
+	if len(password) < AccountPasswordMinLength {
+		return nil, ErrAccountPasswordTooShort
 	}
 
 	// Check if name exists before hashing the password
 	exists, err := sc.Queries.CheckAccountName(sc.Ctx, name)
 	if err != nil {
-		return 0, err
+		return nil, err
 	} else if exists != 0 {
-		return 0, ErrAccountNameTaken
+		return nil, ErrAccountNameTaken
 	}
 
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		if errors.Is(err, bcrypt.ErrPasswordTooLong) {
-			return 0, ErrPasswordTooLong
+			return nil, ErrPasswordTooLong
 		}
-		return 0, err
+		return nil, err
 	}
 
-	id, err := sc.Queries.CreateAccount(sc.Ctx, &db.CreateAccountParams{
+	account, err := sc.Queries.CreateAccount(sc.Ctx, &db.CreateAccountParams{
 		Name:         name,
 		PasswordHash: passwordHash,
 	})
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return 0, ErrAccountNameTaken
+			return nil, ErrAccountNameTaken
 		}
-		return 0, err
+		return nil, err
 	}
 
-	return id, nil
+	ctxlog.Info(
+		sc.Ctx, "account created",
+		"account_id", account.ID,
+		"account_name", account.Name,
+	)
+
+	return account, nil
+}
+
+func (sc *StateCtx) CheckPassword(name, password string) (*db.Account, error) {
+	if len(name) < AccountNameMinLength {
+		return nil, ErrAccountNameTooShort
+	}
+	if len(password) < AccountPasswordMinLength {
+		return nil, ErrAccountPasswordTooShort
+	}
+
+	account, err := sc.FindAccount(nil, &name)
+	if err != nil {
+		return nil, err
+	}
+
+	err = bcrypt.CompareHashAndPassword(account.PasswordHash, []byte(password))
+	if err != nil {
+		return nil, ErrUnauthorized.WithInternal(err)
+	}
+
+	ctxlog.Info(
+		sc.Ctx, "account password matched",
+		"account_id", account.ID,
+		"account_name", account.Name,
+	)
+
+	return account, nil
 }

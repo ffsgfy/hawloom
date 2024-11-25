@@ -2,7 +2,7 @@
 INSERT INTO account (name, password_hash)
 VALUES ($1, $2)
 ON CONFLICT (name) DO NOTHING
-RETURNING id;
+RETURNING *;
 
 -- name: FindAccountByID :one
 SELECT * FROM account WHERE id = $1;

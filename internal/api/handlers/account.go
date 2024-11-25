@@ -56,13 +56,50 @@ func HandleAccountPost(s *api.State) echo.HandlerFunc {
 			return api.OnBindError(err)
 		}
 
-		id, err := s.Ctx(c.Request().Context()).CreateAccount(req.Name, req.Password)
+		account, err := s.Ctx(c.Request().Context()).CreateAccount(req.Name, req.Password)
 		if err != nil {
 			return err
 		}
 
 		return c.JSON(http.StatusOK, &accountPostResponse{
-			ID: id,
+			ID: account.ID,
+		})
+	}
+}
+
+func HandleAccountLoginPost(s *api.State) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		req := accountPostRequest{}
+		if err := c.Bind(&req); err != nil {
+			return api.OnBindError(err)
+		}
+
+		sc := s.Ctx(c.Request().Context())
+		account, err := sc.CheckPassword(req.Name, req.Password)
+		if err != nil {
+			return err
+		}
+
+		key := sc.GetKeyInUse()
+		if key == nil {
+			return api.ErrNoKeyInUse
+		}
+
+		token := key.CreateToken(account.ID)
+		tokenStr, err := key.EncodeToken(token)
+		if err != nil {
+			return err
+		}
+
+		c.SetCookie(&http.Cookie{
+			Name:     api.AuthCookie,
+			Value:    tokenStr,
+			MaxAge:   api.TokenTTL,
+			SameSite: http.SameSiteStrictMode,
+		})
+
+		return c.JSON(http.StatusOK, &accountPostResponse{
+			ID: account.ID,
 		})
 	}
 }

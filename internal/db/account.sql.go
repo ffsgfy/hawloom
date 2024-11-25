@@ -24,7 +24,7 @@ const createAccount = `-- name: CreateAccount :one
 INSERT INTO account (name, password_hash)
 VALUES ($1, $2)
 ON CONFLICT (name) DO NOTHING
-RETURNING id
+RETURNING id, name, created_at, password_hash
 `
 
 type CreateAccountParams struct {
@@ -32,11 +32,16 @@ type CreateAccountParams struct {
 	PasswordHash []byte `db:"password_hash"`
 }
 
-func (q *Queries) CreateAccount(ctx context.Context, arg *CreateAccountParams) (int32, error) {
+func (q *Queries) CreateAccount(ctx context.Context, arg *CreateAccountParams) (*Account, error) {
 	row := q.db.QueryRow(ctx, createAccount, arg.Name, arg.PasswordHash)
-	var id int32
-	err := row.Scan(&id)
-	return id, err
+	var i Account
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.CreatedAt,
+		&i.PasswordHash,
+	)
+	return &i, err
 }
 
 const findAccountByID = `-- name: FindAccountByID :one

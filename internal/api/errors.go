@@ -6,17 +6,26 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+// With the exception of ErrInternal, only add internal errors to this list
+// if they are reused; for one-off internal errors use errors.New() or fmt.Errorf()
 var (
 	ErrInvalidInput = echo.NewHTTPError(http.StatusBadRequest, "invalid input")
-	ErrInternal     = echo.NewHTTPError(http.StatusBadRequest, "internal error")
+	ErrInternal     = echo.NewHTTPError(http.StatusInternalServerError, "internal error")
+	ErrUnauthorized = echo.NewHTTPError(http.StatusUnauthorized, "unauthorized")
 
-	ErrNoAccountIDOrName    = echo.NewHTTPError(http.StatusBadRequest, "either account id or name required")
-	ErrBothAccountIDAndName = echo.NewHTTPError(http.StatusBadRequest, "both account id and name not supported")
-	ErrAccountNotFound      = echo.NewHTTPError(http.StatusNotFound, "account not found")
-	ErrAccountWasNil        = echo.NewHTTPError(http.StatusInternalServerError, "account was nil")
-	ErrAccountNameTooShort  = echo.NewHTTPError(http.StatusBadRequest, "account name too short")
-	ErrPasswordTooLong      = echo.NewHTTPError(http.StatusBadRequest, "password too long")
-	ErrAccountNameTaken     = echo.NewHTTPError(http.StatusConflict, "account name already taken")
+	ErrNoAccountIDOrName       = echo.NewHTTPError(http.StatusBadRequest, "either account id or name required")
+	ErrBothAccountIDAndName    = echo.NewHTTPError(http.StatusBadRequest, "both account id and name not supported")
+	ErrAccountNotFound         = echo.NewHTTPError(http.StatusNotFound, "account not found")
+	ErrAccountNameTooShort     = echo.NewHTTPError(http.StatusBadRequest, "account name too short")
+	ErrAccountPasswordTooShort = echo.NewHTTPError(http.StatusBadRequest, "account password too short")
+	ErrPasswordTooLong         = echo.NewHTTPError(http.StatusBadRequest, "password too long")
+	ErrAccountNameTaken        = echo.NewHTTPError(http.StatusConflict, "account name already taken")
+
+	ErrMalformedToken = echo.NewHTTPError(http.StatusUnauthorized, "malformed token")
+	ErrNoKeyInUse     = echo.NewHTTPError(http.StatusInternalServerError, "failed to get key in use")
+	ErrNoTokenKey     = echo.NewHTTPError(http.StatusUnauthorized, "failed to get token key")
+	ErrWrongTokenKey  = echo.NewHTTPError(http.StatusUnauthorized, "wrong token key")
+	ErrExpiredToken   = echo.NewHTTPError(http.StatusUnauthorized, "expired token")
 )
 
 func OnBindError(err error) error {

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"net/http"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -13,23 +14,23 @@ import (
 	"github.com/ffsgfy/hawloom/internal/utils/ctxlog"
 )
 
-type reqidKeyType struct{}
+type reqIDKeyType struct{}
 
-var reqidKey = reqidKeyType{}
+var reqIDKey = reqIDKeyType{}
 
 func SetupContext(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		reqid := fmt.Sprintf("%016x", rand.Uint64())
+		reqID := fmt.Sprintf("%016x", rand.Uint64())
 		req := c.Request()
-		ctx := context.WithValue(req.Context(), reqidKey, reqid)
-		c.SetRequest(req.WithContext(ctxlog.With(ctx, "reqid", reqid)))
+		ctx := context.WithValue(req.Context(), reqIDKey, reqID)
+		c.SetRequest(req.WithContext(ctxlog.With(ctx, "req_id", reqID)))
 		return next(c)
 	}
 }
 
 func GetRequestID(ctx context.Context) string {
-	if reqid, ok := ctx.Value(reqidKey).(string); ok {
-		return reqid
+	if reqID, ok := ctx.Value(reqIDKey).(string); ok {
+		return reqID
 	}
 	return ""
 }
@@ -49,10 +50,10 @@ func LogAccess(next echo.HandlerFunc) echo.HandlerFunc {
 			tags := make([]any, 0, 10)
 			tags = append(
 				tags,
-				"path", c.Path(),
-				"status", res.Status,
+				"req_path", c.Path(),
+				"res_status", res.Status,
+				"res_size", res.Size,
 				"dt", durationMilli,
-				"size", res.Size,
 			)
 			if err != nil {
 				tags = append(tags, "err", err)
@@ -77,6 +78,10 @@ func WrapErrors(next echo.HandlerFunc) echo.HandlerFunc {
 		}
 
 		herr, ok := err.(*echo.HTTPError)
+		if ok && herr.Code == http.StatusInternalServerError {
+			// Replace all internal errors with the generic api.ErrInternal
+			ok = false
+		}
 		if ok {
 			if _, ok := herr.Internal.(*echo.HTTPError); ok {
 				// Wrap internal HTTP error (see (echo.Echo).DefaultHTTPErrorHandler)
@@ -91,7 +96,7 @@ func WrapErrors(next echo.HandlerFunc) echo.HandlerFunc {
 
 		herr.Message = map[string]any{
 			"message": herr.Message,
-			"reqid":   GetRequestID(c.Request().Context()),
+			"req_id":  GetRequestID(c.Request().Context()),
 		}
 
 		return herr

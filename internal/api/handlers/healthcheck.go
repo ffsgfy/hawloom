@@ -8,6 +8,7 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"github.com/ffsgfy/hawloom/internal/api"
+	"github.com/ffsgfy/hawloom/internal/utils/ctxlog"
 )
 
 func HandleHealthcheck(s *api.State) echo.HandlerFunc {
@@ -17,6 +18,7 @@ func HandleHealthcheck(s *api.State) echo.HandlerFunc {
 
 		err := s.Pool.Ping(ctx)
 		if err != nil {
+			ctxlog.Error2(ctx, "healthcheck: db pool error", err)
 			return c.String(http.StatusInternalServerError, err.Error())
 		}
 
