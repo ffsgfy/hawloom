@@ -80,23 +80,14 @@ func HandleAccountLoginPost(s *api.State) echo.HandlerFunc {
 			return err
 		}
 
-		key := sc.GetKeyInUse()
-		if key == nil {
-			return api.ErrNoKeyInUse
-		}
-
-		token := key.CreateToken(account.ID)
-		tokenStr, err := key.EncodeToken(token)
+		key := sc.Auth.KeyInUse.Load()
+		token := api.CreateAuthToken(key, account.ID)
+		cookie, err := api.CreateAuthCookie(key, token)
 		if err != nil {
 			return err
 		}
 
-		c.SetCookie(&http.Cookie{
-			Name:     api.AuthCookie,
-			Value:    tokenStr,
-			MaxAge:   api.TokenTTL,
-			SameSite: http.SameSiteStrictMode,
-		})
+		c.SetCookie(cookie)
 
 		return c.JSON(http.StatusOK, &accountPostResponse{
 			ID: account.ID,

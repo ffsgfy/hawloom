@@ -19,12 +19,12 @@ func main() {
 		panic(err)
 	}
 
-	if err := state.Ctx(ctx).LoadKeys(false); err != nil {
+	if err := state.Ctx(ctx).LoadAuthKeys(false); err != nil {
 		ctxlog.Error2(ctx, "failed to load keys", err)
 		panic(err)
 	}
 
-	key, err := state.Ctx(ctx).CreateKey()
+	key, err := state.Ctx(ctx).CreateAuthKey()
 	if err != nil {
 		ctxlog.Error2(ctx, "failed to create new key", err)
 		panic(err)

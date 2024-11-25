@@ -31,7 +31,7 @@ func main() {
 		panic(err)
 	}
 
-	if err := state.Ctx(ctx).LoadKeys(true); err != nil {
+	if err := state.Ctx(ctx).LoadAuthKeys(true); err != nil {
 		ctxlog.Error2(ctx, "failed to load keys", err)
 		panic(err)
 	}

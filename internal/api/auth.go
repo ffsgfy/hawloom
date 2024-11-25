@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
@@ -8,6 +9,9 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"net/http"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/ffsgfy/hawloom/internal/db"
@@ -19,6 +23,97 @@ const (
 	TokenTTL   = 60 * 60 * 8
 	AuthCookie = "auth"
 )
+
+type AuthKey db.Key
+
+type Auth struct {
+	Lock sync.RWMutex // only for the keystore
+	Keystore map[int32]*AuthKey
+
+	KeyInUse atomic.Pointer[AuthKey]
+}
+
+func NewAuth() *Auth {
+	auth := &Auth{
+		Keystore: map[int32]*AuthKey{},
+	}
+	auth.KeyInUse.Store(&AuthKey{})
+	return auth
+}
+
+func (a *Auth) GetKey(id int32) *AuthKey {
+	a.Lock.RLock()
+	defer a.Lock.RUnlock()
+	return a.Keystore[id]
+}
+
+func (sc *StateCtx) CreateAuthKey() (*AuthKey, error) {
+	data := make([]byte, KeySize)
+	_, err := rand.Reader.Read(data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate key data: %w", err)
+	}
+
+	key, err := sc.Queries.CreateKey(sc.Ctx, data)
+	if err != nil {
+		return nil, err
+	}
+
+	return (*AuthKey)(key), nil
+}
+
+func (sc *StateCtx) LoadAuthKeys(required bool) error {
+	keys, err := sc.Queries.FindKeys(sc.Ctx)
+	if err != nil {
+		return err
+	}
+
+	if required && len(keys) == 0 {
+		return errors.New("no keys in db")
+	}
+
+	sc.Auth.Lock.Lock()
+	defer sc.Auth.Lock.Unlock()
+	clear(sc.Auth.Keystore)
+
+	keyIDs := make([]int32, 0, len(keys))
+	keyInUse := sc.Auth.KeyInUse.Load()
+
+	for i, key := range keys {
+		keyIDs = append(keyIDs, key.ID)
+		authKey := (*AuthKey)(key)
+
+		sc.Auth.Keystore[authKey.ID] = authKey
+		if i == 0 || authKey.ID > keyInUse.ID {
+			keyInUse = authKey
+		}
+	}
+
+	sc.Auth.KeyInUse.Store(keyInUse)
+
+	ctxlog.Info(
+		sc.Ctx, "loaded keys from db",
+		"key_count", len(keys),
+		"key_ids", keyIDs,
+		"key_in_use", keyInUse.ID,
+	)
+
+	return nil
+}
+
+type AuthToken struct {
+	AccountID int32
+	KeyID     int32
+	Expires   int64 // unix timestamp in seconds
+}
+
+func (t *AuthToken) TTL() int64 {
+	return t.Expires - time.Now().Unix()
+}
+
+func (t *AuthToken) String() string {
+	return fmt.Sprintf("<%d:%d:%d>", t.AccountID, t.KeyID, t.Expires)
+}
 
 func ComputeHMAC(data, key, out []byte) ([]byte, error) {
 	hm := hmac.New(sha256.New, key)
@@ -39,98 +134,21 @@ func CheckHMAC(data, key, hm []byte) (bool, error) {
 	return hmac.Equal(dataHM, hm), nil
 }
 
-type AuthKey db.Key
-
-func (sc *StateCtx) CreateKey() (*AuthKey, error) {
-	data := make([]byte, KeySize)
-	_, err := rand.Reader.Read(data)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate key data: %w", err)
-	}
-
-	key, err := sc.Queries.CreateKey(sc.Ctx, data)
-	if err != nil {
-		return nil, err
-	}
-
-	return (*AuthKey)(key), nil
-}
-
-func (sc *StateCtx) LoadKeys(required bool) error {
-	keys, err := sc.Queries.FindKeys(sc.Ctx)
-	if err != nil {
-		return err
-	}
-
-	if required && len(keys) == 0 {
-		return errors.New("no keys in db")
-	}
-
-	sc.KeysLock.Lock()
-	defer sc.KeysLock.Unlock()
-
-	clear(sc.Keys)
-	sc.KeyInUse = 0
-
-	keyIDs := make([]int32, 0, len(keys))
-	for i, key := range keys {
-		keyIDs = append(keyIDs, key.ID)
-
-		sc.Keys[key.ID] = (*AuthKey)(key)
-		if i == 0 {
-			sc.KeyInUse = key.ID
-		} else {
-			sc.KeyInUse = max(sc.KeyInUse, key.ID)
-		}
-	}
-
-	ctxlog.Info(
-		sc.Ctx, "loaded keys from db",
-		"key_count", len(keys),
-		"key_ids", keyIDs,
-		"key_in_use", sc.KeyInUse,
-	)
-
-	return nil
-}
-
-func (s *State) GetKey(id int32) *AuthKey {
-	s.KeysLock.RLock()
-	defer s.KeysLock.RUnlock()
-	return s.Keys[id]
-}
-
-func (s *State) GetKeyInUse() *AuthKey {
-	s.KeysLock.RLock()
-	defer s.KeysLock.RUnlock()
-	return s.Keys[s.KeyInUse]
-}
-
-type Token struct {
-	KeyID     int32
-	AccountID int32
-	Expires   int64 // unix timestamp in seconds
-}
-
-func (t *Token) TTL() int64 {
-	return t.Expires - time.Now().Unix()
-}
-
-func (k *AuthKey) CreateToken(accountID int32) *Token {
-	return &Token{
-		KeyID:     k.ID,
+func CreateAuthToken(key *AuthKey, accountID int32) *AuthToken {
+	return &AuthToken{
 		AccountID: accountID,
+		KeyID:     key.ID,
 		Expires:   time.Now().Unix() + TokenTTL,
 	}
 }
 
-func (k *AuthKey) EncodeToken(token *Token) (string, error) {
+func EncodeAuthToken(key *AuthKey, token *AuthToken) (string, error) {
 	data, err := binary.Append(nil, binary.BigEndian, token)
 	if err != nil {
-		return "", fmt.Errorf("failed to encode token: %w", err)
+		return "", fmt.Errorf("failed to encode auth token: %w", err)
 	}
 
-	data, err = ComputeHMAC(data, k.Data, data)
+	data, err = ComputeHMAC(data, key.Data, data)
 	if err != nil {
 		return "", err
 	}
@@ -138,7 +156,7 @@ func (k *AuthKey) EncodeToken(token *Token) (string, error) {
 	return base64.RawURLEncoding.EncodeToString(data), nil
 }
 
-func DecodeToken(str string) (*Token, []byte, []byte, error) {
+func DecodeAuthToken(str string) (*AuthToken, []byte, []byte, error) {
 	data, err := base64.RawURLEncoding.DecodeString(str)
 	if err != nil {
 		return nil, nil, nil, ErrMalformedToken.WithInternal(
@@ -146,46 +164,91 @@ func DecodeToken(str string) (*Token, []byte, []byte, error) {
 		)
 	}
 
-	token := Token{}
+	token := AuthToken{}
 	size, err := binary.Decode(data, binary.BigEndian, &token)
 	if err != nil {
 		return nil, nil, nil, ErrMalformedToken.WithInternal(
-			fmt.Errorf("failed to decode token: %w", err),
+			fmt.Errorf("failed to decode auth token: %w", err),
 		)
 	}
 
 	return &token, data[:size], data[size:], nil
 }
 
-func (sc *StateCtx) CheckToken(str string) (*Token, *db.Account, error) {
-	token, data, hm, err := DecodeToken(str)
+func CreateAuthCookie(key *AuthKey, token *AuthToken) (*http.Cookie, error) {
+	tokenStr, err := EncodeAuthToken(key, token)
+	if err != nil {
+		return nil, err
+	}
+
+	return &http.Cookie{
+		Name:     AuthCookie,
+		Value:    tokenStr,
+		MaxAge:   TokenTTL,
+		SameSite: http.SameSiteStrictMode,
+	}, nil
+}
+
+type AuthState struct {
+	Token   *AuthToken
+	Account *db.Account
+	Error   error
+}
+
+func (a *AuthState) Valid() bool {
+	return a.Error == nil && a.Account != nil && a.Token != nil
+}
+
+type authStateKeyType struct{}
+
+var authStateKey = authStateKeyType{}
+
+func WithAuthState(ctx context.Context, authState *AuthState) context.Context {
+	return context.WithValue(ctx, authStateKey, authState)
+}
+
+func GetAuthState(ctx context.Context) *AuthState {
+	if authState, ok := ctx.Value(authStateKey).(*AuthState); ok {
+		return authState
+	}
+	return nil
+}
+
+func (sc *StateCtx) CheckAuthToken(tokenStr string) (*AuthToken, *db.Account, error) {
+	token, data, hm, err := DecodeAuthToken(tokenStr)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	key := sc.GetKey(token.KeyID)
+	key := sc.Auth.GetKey(token.KeyID)
 	if key == nil {
-		return nil, nil, ErrNoTokenKey
+		return token, nil, ErrNoTokenKey
 	}
 
 	ok, err := CheckHMAC(data, key.Data, hm)
 	if err != nil {
-		return nil, nil, err
+		return token, nil, err
 	} else if !ok {
-		return nil, nil, ErrWrongTokenKey
+		return token, nil, ErrWrongTokenHash
 	}
 
 	if token.TTL() < 0 {
-		return nil, nil, ErrExpiredToken
+		return token, nil, ErrExpiredToken
 	}
 
 	account, err := sc.FindAccount(&token.AccountID, nil)
 	if err != nil {
 		if errors.Is(err, ErrAccountNotFound) {
-			return nil, nil, ErrUnauthorized.WithInternal(err)
+			return token, nil, ErrUnauthorized.WithInternal(err)
 		}
-		return nil, nil, err
+		return token, nil, err
 	}
 
 	return token, account, nil
+}
+
+func (sc *StateCtx) CreateAuthState(tokenStr string) *AuthState {
+	state := AuthState{}
+	state.Token, state.Account, state.Error = sc.CheckAuthToken(tokenStr)
+	return &state
 }

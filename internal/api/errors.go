@@ -22,9 +22,8 @@ var (
 	ErrAccountNameTaken        = echo.NewHTTPError(http.StatusConflict, "account name already taken")
 
 	ErrMalformedToken = echo.NewHTTPError(http.StatusUnauthorized, "malformed token")
-	ErrNoKeyInUse     = echo.NewHTTPError(http.StatusInternalServerError, "failed to get key in use")
-	ErrNoTokenKey     = echo.NewHTTPError(http.StatusUnauthorized, "failed to get token key")
-	ErrWrongTokenKey  = echo.NewHTTPError(http.StatusUnauthorized, "wrong token key")
+	ErrNoTokenKey     = echo.NewHTTPError(http.StatusUnauthorized, "non-existent token key")
+	ErrWrongTokenHash = echo.NewHTTPError(http.StatusUnauthorized, "wrong token hash")
 	ErrExpiredToken   = echo.NewHTTPError(http.StatusUnauthorized, "expired token")
 )
 

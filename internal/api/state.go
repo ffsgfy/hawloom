@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"sync"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -12,10 +11,7 @@ import (
 type State struct {
 	Pool    *pgxpool.Pool
 	Queries *db.Queries
-
-	KeysLock sync.RWMutex
-	Keys     map[int32]*AuthKey
-	KeyInUse int32
+	Auth    *Auth
 }
 
 func NewState(ctx context.Context, dbURI string) (*State, error) {
@@ -27,7 +23,7 @@ func NewState(ctx context.Context, dbURI string) (*State, error) {
 	return &State{
 		Pool:    pool,
 		Queries: db.New(pool),
-		Keys:    map[int32]*AuthKey{},
+		Auth:    NewAuth(),
 	}, nil
 }
 

@@ -1,10 +1,7 @@
 package middleware
 
 import (
-	"context"
 	"errors"
-	"fmt"
-	"math/rand"
 	"net/http"
 	"time"
 
@@ -14,40 +11,37 @@ import (
 	"github.com/ffsgfy/hawloom/internal/utils/ctxlog"
 )
 
-type reqIDKeyType struct{}
-
-var reqIDKey = reqIDKeyType{}
-
 func SetupContext(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		reqID := fmt.Sprintf("%016x", rand.Uint64())
+		reqID := api.CreateReqID()
 		req := c.Request()
-		ctx := context.WithValue(req.Context(), reqIDKey, reqID)
-		c.SetRequest(req.WithContext(ctxlog.With(ctx, "req_id", reqID)))
+		c.SetRequest(
+			req.WithContext(
+				api.WithReqID(
+					ctxlog.With(req.Context(), "req_id", reqID),
+					reqID,
+				),
+			),
+		)
 		return next(c)
 	}
-}
-
-func GetRequestID(ctx context.Context) string {
-	if reqID, ok := ctx.Value(reqIDKey).(string); ok {
-		return reqID
-	}
-	return ""
 }
 
 func LogAccess(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		var err error
-		req := c.Request()
-		res := c.Response()
-		start := time.Now()
 
+		start := time.Now()
+		res := c.Response()
 		res.After(func() {
 			duration := time.Since(start)
 			durationMilli := float64(duration.Microseconds()) / 1000.0
 
-			// TODO: also log user ip, identity
-			tags := make([]any, 0, 10)
+			req := c.Request()
+			ctx := req.Context()
+
+			// TODO: also log user ip
+			tags := make([]any, 0, 16)
 			tags = append(
 				tags,
 				"req_path", c.Path(),
@@ -55,17 +49,30 @@ func LogAccess(next echo.HandlerFunc) echo.HandlerFunc {
 				"res_size", res.Size,
 				"dt", durationMilli,
 			)
+
 			if err != nil {
 				tags = append(tags, "err", err)
 			}
 
-			ctxlog.Info(req.Context(), "HTTP "+req.Method, tags...)
+			authState := api.GetAuthState(ctx)
+			if authState != nil {
+				tags = append(tags, "auth", authState.Valid())
+				if authState.Token != nil {
+					tags = append(tags, "auth_token", authState.Token)
+				}
+				if authState.Error != nil {
+					tags = append(tags, "auth_err", authState.Error)
+				}
+			}
+
+			ctxlog.Info(ctx, "HTTP "+req.Method, tags...)
 		})
 
 		err = next(c)
 		if res.Committed && err != nil {
-			ctxlog.Error2(req.Context(), "post-response error", err)
+			ctxlog.Error2(c.Request().Context(), "post-response error", err)
 		}
+
 		return err
 	}
 }
@@ -96,7 +103,7 @@ func WrapErrors(next echo.HandlerFunc) echo.HandlerFunc {
 
 		herr.Message = map[string]any{
 			"message": herr.Message,
-			"req_id":  GetRequestID(c.Request().Context()),
+			"req_id":  api.GetReqID(c.Request().Context()),
 		}
 
 		return herr
