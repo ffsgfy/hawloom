@@ -27,7 +27,7 @@ const (
 type AuthKey db.Key
 
 type Auth struct {
-	Lock sync.RWMutex // only for the keystore
+	Lock     sync.RWMutex // only for the keystore
 	Keystore map[int32]*AuthKey
 
 	KeyInUse atomic.Pointer[AuthKey]

@@ -7,7 +7,7 @@ import (
 )
 
 func ManageAuth(s *api.State) echo.MiddlewareFunc {
-	return func (next echo.HandlerFunc) echo.HandlerFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			authCookie, err := c.Cookie(api.AuthCookie)
 			if err == nil && len(authCookie.Value) > 0 {
