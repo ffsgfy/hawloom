@@ -39,9 +39,6 @@ func (sc *StateCtx) FindAccount(id *int32, name *string) (*db.Account, error) {
 		}
 		return nil, err
 	}
-	if account == nil {
-		return nil, errors.New("account was nil")
-	}
 
 	return account, nil
 }
@@ -55,8 +52,7 @@ func (sc *StateCtx) CreateAccount(name, password string) (*db.Account, error) {
 	}
 
 	// Check if name exists before hashing the password
-	exists, err := sc.Queries.CheckAccountName(sc.Ctx, name)
-	if err != nil {
+	if exists, err := sc.Queries.CheckAccountName(sc.Ctx, name); err != nil {
 		return nil, err
 	} else if exists != 0 {
 		return nil, ErrAccountNameTaken
@@ -103,8 +99,7 @@ func (sc *StateCtx) CheckPassword(name, password string) (*db.Account, error) {
 		return nil, err
 	}
 
-	err = bcrypt.CompareHashAndPassword(account.PasswordHash, []byte(password))
-	if err != nil {
+	if err = bcrypt.CompareHashAndPassword(account.PasswordHash, []byte(password)); err != nil {
 		return nil, ErrUnauthorized.WithInternal(err)
 	}
 

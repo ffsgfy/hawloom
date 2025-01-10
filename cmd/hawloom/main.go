@@ -25,7 +25,7 @@ func main() {
 		panic(err)
 	}
 
-	state, err := api.NewState(ctx, utils.MakePostgresURIFromEnv())
+	state, err := api.NewState(ctx, utils.MakePostgresURIFromEnv(false))
 	if err != nil {
 		ctxlog.Error2(ctx, "failed to initialize state", err)
 		panic(err)

@@ -49,8 +49,7 @@ func (a *Auth) GetKey(id int32) *AuthKey {
 
 func (sc *StateCtx) CreateAuthKey() (*AuthKey, error) {
 	data := make([]byte, KeySize)
-	_, err := rand.Reader.Read(data)
-	if err != nil {
+	if _, err := rand.Reader.Read(data); err != nil {
 		return nil, fmt.Errorf("failed to generate key data: %w", err)
 	}
 
@@ -117,8 +116,7 @@ func (t *AuthToken) String() string {
 
 func ComputeHMAC(data, key, out []byte) ([]byte, error) {
 	hm := hmac.New(sha256.New, key)
-	_, err := hm.Write(data)
-	if err != nil {
+	if _, err := hm.Write(data); err != nil {
 		return nil, fmt.Errorf("failed to compute HMAC: %w", err)
 	}
 
@@ -214,6 +212,18 @@ func GetAuthState(ctx context.Context) *AuthState {
 	return nil
 }
 
+func GetValidAuthState(ctx context.Context) (*AuthState, error) {
+	if authState := GetAuthState(ctx); authState != nil {
+		if authState.Valid() {
+			return authState, nil
+		}
+		if authState.Error != nil {
+			return nil, authState.Error
+		}
+	}
+	return nil, ErrUnauthorized
+}
+
 func (sc *StateCtx) CheckAuthToken(tokenStr string) (*AuthToken, *db.Account, error) {
 	token, data, hm, err := DecodeAuthToken(tokenStr)
 	if err != nil {
@@ -225,8 +235,7 @@ func (sc *StateCtx) CheckAuthToken(tokenStr string) (*AuthToken, *db.Account, er
 		return token, nil, ErrNoTokenKey
 	}
 
-	ok, err := CheckHMAC(data, key.Data, hm)
-	if err != nil {
+	if ok, err := CheckHMAC(data, key.Data, hm); err != nil {
 		return token, nil, err
 	} else if !ok {
 		return token, nil, ErrWrongTokenHash

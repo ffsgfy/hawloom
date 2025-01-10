@@ -12,6 +12,7 @@ var (
 	ErrInvalidInput = echo.NewHTTPError(http.StatusBadRequest, "invalid input")
 	ErrInternal     = echo.NewHTTPError(http.StatusInternalServerError, "internal error")
 	ErrUnauthorized = echo.NewHTTPError(http.StatusUnauthorized, "unauthorized")
+	ErrForbidden    = echo.NewHTTPError(http.StatusForbidden, "forbidden")
 
 	ErrNoAccountIDOrName       = echo.NewHTTPError(http.StatusBadRequest, "either account id or name required")
 	ErrBothAccountIDAndName    = echo.NewHTTPError(http.StatusBadRequest, "both account id and name not supported")
@@ -25,6 +26,18 @@ var (
 	ErrNoTokenKey     = echo.NewHTTPError(http.StatusUnauthorized, "non-existent token key")
 	ErrWrongTokenHash = echo.NewHTTPError(http.StatusUnauthorized, "wrong token hash")
 	ErrExpiredToken   = echo.NewHTTPError(http.StatusUnauthorized, "expired token")
+
+	ErrRoundDurationTooSmall = echo.NewHTTPError(http.StatusBadRequest, "round duration too small")
+	ErrDocNotFound           = echo.NewHTTPError(http.StatusNotFound, "doc not found")
+	ErrVerNotFound           = echo.NewHTTPError(http.StatusNotFound, "ver not found")
+	ErrDeletePastVer         = echo.NewHTTPError(http.StatusConflict, "cannot delete past ver")
+
+	ErrVotePastVer = echo.NewHTTPError(http.StatusConflict, "cannot vote for past ver")
+	ErrVoteOwnVer = echo.NewHTTPError(http.StatusConflict, "cannot vote for own ver")
+	ErrVerVoteExists = echo.NewHTTPError(http.StatusConflict, "already voted for this ver")
+	ErrDocVoteExists = echo.NewHTTPError(http.StatusConflict, "already voted for another ver")
+	ErrDeletePastVote = echo.NewHTTPError(http.StatusConflict, "cannot delete past vote")
+	ErrVoteNotFound = echo.NewHTTPError(http.StatusNotFound, "vote not found")
 )
 
 func OnBindError(err error) error {

@@ -9,7 +9,7 @@ func MakePostgresURI(user, password, host, port, db string) string {
 	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", user, password, host, port, db)
 }
 
-func MakePostgresURIFromEnv() string {
+func MakePostgresURIFromEnv(testDB bool) string {
 	user := os.Getenv("POSTGRES_USER")
 	password := os.Getenv("POSTGRES_PASSWORD")
 	host := os.Getenv("POSTGRES_HOST")

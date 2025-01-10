@@ -13,7 +13,7 @@ func main() {
 	ctxlog.SetDefault(ctxlog.New(os.Stdout, ctxlog.INFO))
 	ctx := context.Background()
 
-	state, err := api.NewState(ctx, utils.MakePostgresURIFromEnv())
+	state, err := api.NewState(ctx, utils.MakePostgresURIFromEnv(false))
 	if err != nil {
 		ctxlog.Error2(ctx, "failed to initialize state", err)
 		panic(err)

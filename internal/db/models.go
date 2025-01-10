@@ -5,18 +5,55 @@
 package db
 
 import (
-	"github.com/jackc/pgx/v5/pgtype"
+	"time"
+
+	"github.com/google/uuid"
 )
 
 type Account struct {
-	ID           int32            `db:"id"`
-	Name         string           `db:"name"`
-	CreatedAt    pgtype.Timestamp `db:"created_at"`
-	PasswordHash []byte           `db:"password_hash"`
+	ID           int32     `db:"id"`
+	Name         string    `db:"name"`
+	CreatedAt    time.Time `db:"created_at"`
+	PasswordHash []byte    `db:"password_hash"`
+}
+
+type Doc struct {
+	ID           uuid.UUID `db:"id"`
+	Title        string    `db:"title"`
+	Flags        int32     `db:"flags"`
+	CreatedBy    int32     `db:"created_by"`
+	CreatedAt    time.Time `db:"created_at"`
+	VordDuration int32     `db:"vord_duration"`
+	CurrentVer   uuid.UUID `db:"current_ver"`
 }
 
 type Key struct {
-	ID        int32            `db:"id"`
-	CreatedAt pgtype.Timestamp `db:"created_at"`
-	Data      []byte           `db:"data"`
+	ID        int32     `db:"id"`
+	CreatedAt time.Time `db:"created_at"`
+	Data      []byte    `db:"data"`
+}
+
+type Ver struct {
+	ID        uuid.UUID `db:"id"`
+	Doc       uuid.UUID `db:"doc"`
+	VordNum   int32     `db:"vord_num"`
+	CreatedBy *int32    `db:"created_by"`
+	CreatedAt time.Time `db:"created_at"`
+	Summary   string    `db:"summary"`
+	Content   string    `db:"content"`
+}
+
+type Vord struct {
+	Doc      uuid.UUID `db:"doc"`
+	Num      int32     `db:"num"`
+	Flags    int32     `db:"flags"`
+	StartAt  time.Time `db:"start_at"`
+	FinishAt time.Time `db:"finish_at"`
+}
+
+type Vote struct {
+	Ver     uuid.UUID `db:"ver"`
+	Doc     uuid.UUID `db:"doc"`
+	VordNum int32     `db:"vord_num"`
+	Account int32     `db:"account"`
 }
