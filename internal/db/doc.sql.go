@@ -12,9 +12,9 @@ import (
 )
 
 const createDoc = `-- name: CreateDoc :one
-INSERT INTO doc (id, title, flags, created_by, vord_duration, current_ver)
-VALUES ($1, $2, $3, $4, $5, $6)
-RETURNING id, title, flags, created_by, created_at, vord_duration, current_ver
+INSERT INTO doc (id, title, flags, created_by, vord_duration)
+VALUES ($1, $2, $3, $4, $5)
+RETURNING id, title, flags, created_by, created_at, vord_duration
 `
 
 type CreateDocParams struct {
@@ -23,7 +23,6 @@ type CreateDocParams struct {
 	Flags        int32     `db:"flags"`
 	CreatedBy    int32     `db:"created_by"`
 	VordDuration int32     `db:"vord_duration"`
-	CurrentVer   uuid.UUID `db:"current_ver"`
 }
 
 func (q *Queries) CreateDoc(ctx context.Context, arg *CreateDocParams) (*Doc, error) {
@@ -33,7 +32,6 @@ func (q *Queries) CreateDoc(ctx context.Context, arg *CreateDocParams) (*Doc, er
 		arg.Flags,
 		arg.CreatedBy,
 		arg.VordDuration,
-		arg.CurrentVer,
 	)
 	var i Doc
 	err := row.Scan(
@@ -43,7 +41,6 @@ func (q *Queries) CreateDoc(ctx context.Context, arg *CreateDocParams) (*Doc, er
 		&i.CreatedBy,
 		&i.CreatedAt,
 		&i.VordDuration,
-		&i.CurrentVer,
 	)
 	return &i, err
 }
@@ -58,7 +55,7 @@ func (q *Queries) DeleteDoc(ctx context.Context, id uuid.UUID) error {
 }
 
 const findDoc = `-- name: FindDoc :one
-SELECT id, title, flags, created_by, created_at, vord_duration, current_ver FROM doc WHERE id = $1
+SELECT id, title, flags, created_by, created_at, vord_duration FROM doc WHERE id = $1
 `
 
 func (q *Queries) FindDoc(ctx context.Context, id uuid.UUID) (*Doc, error) {
@@ -71,7 +68,6 @@ func (q *Queries) FindDoc(ctx context.Context, id uuid.UUID) (*Doc, error) {
 		&i.CreatedBy,
 		&i.CreatedAt,
 		&i.VordDuration,
-		&i.CurrentVer,
 	)
 	return &i, err
 }

@@ -35,7 +35,7 @@ func HandleAccountGet(s *api.State) echo.HandlerFunc {
 		return c.JSON(http.StatusOK, &accountGetResponse{
 			ID:        account.ID,
 			Name:      account.Name,
-			CreatedAt: account.CreatedAt.Time,
+			CreatedAt: account.CreatedAt,
 		})
 	}
 }

@@ -7,8 +7,7 @@ BEGIN;
         flags INT NOT NULL,
         created_by INT NOT NULL REFERENCES account (id) ON DELETE CASCADE,
         created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        vord_duration INT NOT NULL CHECK (vord_duration > 0),
-        current_ver UUID NOT NULL
+        vord_duration INT NOT NULL CHECK (vord_duration > 0)
     );
 
     CREATE TABLE vord (
@@ -25,21 +24,19 @@ BEGIN;
         id UUID NOT NULL PRIMARY KEY,
         doc UUID NOT NULL REFERENCES doc (id) ON DELETE CASCADE,
         vord_num INT NOT NULL,
+        votes INT NOT NULL DEFAULT 0, -- may not be up-to-date when vord_num = -1
+        votes_updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
         created_by INT REFERENCES account (id) ON DELETE SET NULL,
         created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
         summary TEXT NOT NULL,
         content TEXT NOT NULL,
 
-        FOREIGN KEY (doc, vord_num) REFERENCES vord (doc, num) ON DELETE CASCADE
+        FOREIGN KEY (doc, vord_num) REFERENCES vord (doc, num)
+            ON UPDATE CASCADE ON DELETE CASCADE
     );
-
-    ALTER TABLE doc
-    ADD CONSTRAINT doc_current_ver_fkey
-        FOREIGN KEY (current_ver) REFERENCES ver (id) ON DELETE RESTRICT
-        DEFERRABLE INITIALLY DEFERRED;
 
     CREATE INDEX ON vord (finish_at)
     WHERE num = -1;
 
-    CREATE INDEX ON ver (doc, vord_num);
+    CREATE INDEX ON ver (doc, vord_num, votes);
 COMMIT;

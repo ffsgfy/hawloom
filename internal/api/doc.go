@@ -52,7 +52,6 @@ func (sc *StateCtx) CreateDoc(params *CreateDocParams) (*db.Doc, *db.Ver, error)
 			Flags:        int32(params.Flags),
 			CreatedBy:    authState.Account.ID,
 			VordDuration: params.VordDuration,
-			CurrentVer:   ver_id,
 		}); err != nil {
 			return err
 		}
@@ -78,7 +77,7 @@ func (sc *StateCtx) CreateDoc(params *CreateDocParams) (*db.Doc, *db.Ver, error)
 	// TODO: log flags
 	ctxlog.Info(
 		sc.Ctx, "doc created",
-		"account", authState.Account.ID,
+		"account_id", authState.Account.ID,
 		"doc_id", doc_id,
 		"ver_id", ver_id,
 	)
@@ -111,7 +110,7 @@ func (sc *StateCtx) DeleteDoc(id uuid.UUID) error {
 
 	ctxlog.Info(
 		sc.Ctx, "doc deleted",
-		"account", authState.Account.ID,
+		"account_id", authState.Account.ID,
 		"doc_id", id,
 	)
 

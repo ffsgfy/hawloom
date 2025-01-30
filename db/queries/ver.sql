@@ -4,9 +4,12 @@ VALUES ($1, $2, $3, $4, $5, $6)
 RETURNING *;
 
 -- name: FindVerForDelete :one
-SELECT ver.vord_num, ver.created_by, ver.doc AS doc_id FROM ver
+SELECT ver.vord_num, ver.created_by, ver.doc AS doc_id
+FROM ver
+    JOIN vord ON vord.doc = ver.doc AND vord.num = ver.vord_num
 WHERE ver.id = $1
-FOR UPDATE;
+FOR UPDATE OF ver
+FOR SHARE OF vord;
 
 -- name: FindVerForVote :one
 SELECT ver.vord_num, ver.created_by, ver.doc AS doc_id, doc.flags AS doc_flags,
@@ -14,13 +17,35 @@ SELECT ver.vord_num, ver.created_by, ver.doc AS doc_id, doc.flags AS doc_flags,
     CAST(doc_vote.account IS NOT NULL AS BOOLEAN) AS doc_vote_exists
 FROM ver
     JOIN doc ON doc.id = ver.doc
+    JOIN vord ON vord.doc = ver.doc AND vord.num = ver.vord_num
     LEFT JOIN vote AS ver_vote
         ON ver_vote.ver = $1 AND ver_vote.account = $2
     LEFT JOIN vote AS doc_vote
         ON doc_vote.doc = ver.doc AND doc_vote.vord_num = ver.vord_num AND doc_vote.account = $2
 WHERE ver.id = $1
 LIMIT 1
-FOR SHARE OF ver;
+FOR UPDATE OF ver
+FOR SHARE OF vord;
+
+-- name: UpdateVerIncVotes :exec
+-- Assumes ver is locked
+UPDATE ver
+SET votes = votes + 1, votes_updated_at = CURRENT_TIMESTAMP
+WHERE id = $1;
+
+-- name: UpdateAllVerVotes :many
+-- Assumes all vers are locked
+WITH ver_votes AS (
+    SELECT vote.ver AS ver, COUNT(*) AS votes FROM vote
+    WHERE vote.doc = $1 AND vote.vord_num = $2
+    GROUP BY vote.ver
+    FOR UPDATE OF vote
+)
+UPDATE ver
+SET votes = ver_votes.votes, votes_updated_at = CURRENT_TIMESTAMP
+FROM ver_votes
+WHERE ver.id = ver_votes.ver
+RETURNING ver.id, ver.votes;
 
 -- name: DeleteVer :exec
 DELETE FROM ver WHERE id = $1;

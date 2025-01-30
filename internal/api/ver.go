@@ -22,6 +22,8 @@ func (sc *StateCtx) CreateVer(params *CreateVerParams) (*db.Ver, error) {
 		return nil, err
 	}
 
+	// TODO: lock current vord
+
 	ver, err := sc.Queries.CreateVer(sc.Ctx, &db.CreateVerParams{
 		ID:        uuid.New(),
 		Doc:       params.DocID,
@@ -36,7 +38,7 @@ func (sc *StateCtx) CreateVer(params *CreateVerParams) (*db.Ver, error) {
 
 	ctxlog.Info(
 		sc.Ctx, "ver created",
-		"account", authState.Account.ID,
+		"account_id", authState.Account.ID,
 		"doc_id", ver.Doc,
 		"ver_id", ver.ID,
 	)
@@ -77,7 +79,7 @@ func (sc *StateCtx) DeleteVer(id uuid.UUID) error {
 
 	ctxlog.Info(
 		sc.Ctx, "ver deleted",
-		"account", authState.Account.ID,
+		"account_id", authState.Account.ID,
 		"doc_id", docID,
 		"ver_id", id,
 	)

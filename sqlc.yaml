@@ -26,3 +26,7 @@ sql:
             go_type:
               import: "time"
               type: "Time"
+          - db_type: "pg_catalog.interval"
+            go_type:
+              import: "time"
+              type: "Duration"

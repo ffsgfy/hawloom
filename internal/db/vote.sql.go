@@ -11,6 +11,24 @@ import (
 	"github.com/google/uuid"
 )
 
+const countVoters = `-- name: CountVoters :one
+SELECT COUNT(DISTINCT account) AS voters FROM vote
+WHERE doc = $1 AND vord_num = $2
+`
+
+type CountVotersParams struct {
+	Doc     uuid.UUID `db:"doc"`
+	VordNum int32     `db:"vord_num"`
+}
+
+// Assumes vord is locked
+func (q *Queries) CountVoters(ctx context.Context, arg *CountVotersParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countVoters, arg.Doc, arg.VordNum)
+	var voters int64
+	err := row.Scan(&voters)
+	return voters, err
+}
+
 const createVote = `-- name: CreateVote :exec
 INSERT INTO vote (ver, doc, vord_num, account)
 VALUES ($1, $2, $3, $4)
@@ -48,9 +66,11 @@ func (q *Queries) DeleteVote(ctx context.Context, arg *DeleteVoteParams) error {
 }
 
 const findVoteForDelete = `-- name: FindVoteForDelete :one
-SELECT ver, doc, vord_num, account FROM vote
-WHERE ver = $1 AND account = $2
-FOR UPDATE
+SELECT vote.ver, vote.doc, vote.vord_num, vote.account FROM vote
+    JOIN vord ON vord.doc = vote.doc AND vord.num = vote.vord_num
+WHERE vote.ver = $1 AND vote.account = $2
+FOR UPDATE OF vote
+FOR SHARE OF vord
 `
 
 type FindVoteForDeleteParams struct {

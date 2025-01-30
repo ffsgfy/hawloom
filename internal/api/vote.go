@@ -37,11 +37,9 @@ func (sc *StateCtx) CreateVote(verID uuid.UUID) error {
 		if row.VordNum != -1 {
 			return ErrVotePastVer
 		}
-
 		if row.CreatedBy != nil && *row.CreatedBy == authState.Account.ID {
 			return ErrVoteOwnVer
 		}
-
 		if row.VerVoteExists {
 			return ErrVerVoteExists
 		}
@@ -52,19 +50,23 @@ func (sc *StateCtx) CreateVote(verID uuid.UUID) error {
 			}
 		}
 
-		return sc.Queries.CreateVote(sc.Ctx, &db.CreateVoteParams{
+		if err = sc.Queries.CreateVote(sc.Ctx, &db.CreateVoteParams{
 			Ver: verID,
 			Doc: row.DocID,
 			VordNum: row.VordNum,
 			Account: authState.Account.ID,
-		})
+		}); err != nil {
+			return err
+		}
+
+		return sc.Queries.UpdateVerIncVotes(sc.Ctx, verID)
 	}); err != nil {
 		return err
 	}
 
 	ctxlog.Info(
 		sc.Ctx, "vote created",
-		"account", authState.Account.ID,
+		"account_id", authState.Account.ID,
 		"doc_id", docID,
 		"ver_id", verID,
 		"approval", approval,
@@ -106,7 +108,7 @@ func (sc *StateCtx) DeleteVote(verID uuid.UUID) error {
 
 	ctxlog.Info(
 		sc.Ctx, "vote deleted",
-		"account", authState.Account.ID,
+		"account_id", authState.Account.ID,
 		"doc_id", vote.Doc,
 		"ver_id", vote.Ver,
 	)

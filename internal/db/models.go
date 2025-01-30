@@ -24,7 +24,6 @@ type Doc struct {
 	CreatedBy    int32     `db:"created_by"`
 	CreatedAt    time.Time `db:"created_at"`
 	VordDuration int32     `db:"vord_duration"`
-	CurrentVer   uuid.UUID `db:"current_ver"`
 }
 
 type Key struct {
@@ -34,13 +33,15 @@ type Key struct {
 }
 
 type Ver struct {
-	ID        uuid.UUID `db:"id"`
-	Doc       uuid.UUID `db:"doc"`
-	VordNum   int32     `db:"vord_num"`
-	CreatedBy *int32    `db:"created_by"`
-	CreatedAt time.Time `db:"created_at"`
-	Summary   string    `db:"summary"`
-	Content   string    `db:"content"`
+	ID             uuid.UUID `db:"id"`
+	Doc            uuid.UUID `db:"doc"`
+	VordNum        int32     `db:"vord_num"`
+	Votes          int32     `db:"votes"`
+	VotesUpdatedAt time.Time `db:"votes_updated_at"`
+	CreatedBy      *int32    `db:"created_by"`
+	CreatedAt      time.Time `db:"created_at"`
+	Summary        string    `db:"summary"`
+	Content        string    `db:"content"`
 }
 
 type Vord struct {
