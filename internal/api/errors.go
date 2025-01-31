@@ -32,14 +32,15 @@ var (
 	ErrVerNotFound           = echo.NewHTTPError(http.StatusNotFound, "ver not found")
 	ErrDeletePastVer         = echo.NewHTTPError(http.StatusConflict, "cannot delete past ver")
 
-	ErrVotePastVer = echo.NewHTTPError(http.StatusConflict, "cannot vote for past ver")
-	ErrVoteOwnVer = echo.NewHTTPError(http.StatusConflict, "cannot vote for own ver")
-	ErrVerVoteExists = echo.NewHTTPError(http.StatusConflict, "already voted for this ver")
-	ErrDocVoteExists = echo.NewHTTPError(http.StatusConflict, "already voted for another ver")
+	ErrVotePastVer    = echo.NewHTTPError(http.StatusConflict, "cannot vote for past ver")
+	ErrVoteOwnVer     = echo.NewHTTPError(http.StatusConflict, "cannot vote for own ver")
+	ErrVerVoteExists  = echo.NewHTTPError(http.StatusConflict, "already voted for this ver")
+	ErrDocVoteExists  = echo.NewHTTPError(http.StatusConflict, "already voted for another ver")
 	ErrDeletePastVote = echo.NewHTTPError(http.StatusConflict, "cannot delete past vote")
-	ErrVoteNotFound = echo.NewHTTPError(http.StatusNotFound, "vote not found")
+	ErrVoteNotFound   = echo.NewHTTPError(http.StatusNotFound, "vote not found")
 
-	ErrVordExists = echo.NewHTTPError(http.StatusConflict, "active vord already exists")
+	ErrNoVordExists   = echo.NewHTTPError(http.StatusConflict, "no active vord currently exists")
+	ErrVordExists     = echo.NewHTTPError(http.StatusConflict, "active vord already exists")
 	ErrCommitPastVord = echo.NewHTTPError(http.StatusConflict, "cannot commit past vord")
 )
 

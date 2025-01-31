@@ -22,17 +22,26 @@ func (sc *StateCtx) CreateVer(params *CreateVerParams) (*db.Ver, error) {
 		return nil, err
 	}
 
-	// TODO: lock current vord
+	var ver *db.Ver
 
-	ver, err := sc.Queries.CreateVer(sc.Ctx, &db.CreateVerParams{
-		ID:        uuid.New(),
-		Doc:       params.DocID,
-		VordNum:   -1,
-		CreatedBy: &authState.Account.ID,
-		Summary:   params.Summary,
-		Content:   params.Content,
-	})
-	if err != nil {
+	if err = sc.Tx(func(sc *StateCtx) error {
+		if res, err := sc.Queries.LockVord(sc.Ctx, params.DocID); err != nil {
+			return err
+		} else if res == 0 {
+			return ErrNoVordExists
+		}
+
+		ver, err = sc.Queries.CreateVer(sc.Ctx, &db.CreateVerParams{
+			ID:        uuid.New(),
+			Doc:       params.DocID,
+			VordNum:   -1,
+			CreatedBy: &authState.Account.ID,
+			Summary:   params.Summary,
+			Content:   params.Content,
+		})
+
+		return err
+	}); err != nil {
 		return nil, err
 	}
 

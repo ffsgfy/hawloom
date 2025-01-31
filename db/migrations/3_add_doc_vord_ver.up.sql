@@ -5,7 +5,7 @@ BEGIN;
         id UUID NOT NULL PRIMARY KEY,
         title VARCHAR(256) NOT NULL,
         flags INT NOT NULL,
-        created_by INT NOT NULL REFERENCES account (id) ON DELETE CASCADE,
+        created_by INT NOT NULL REFERENCES account (id),
         created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
         vord_duration INT NOT NULL CHECK (vord_duration > 0)
     );
@@ -24,19 +24,18 @@ BEGIN;
         id UUID NOT NULL PRIMARY KEY,
         doc UUID NOT NULL REFERENCES doc (id) ON DELETE CASCADE,
         vord_num INT NOT NULL,
-        votes INT NOT NULL DEFAULT 0, -- may not be up-to-date when vord_num = -1
+        votes INT NOT NULL DEFAULT 0,
         votes_updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        created_by INT REFERENCES account (id) ON DELETE SET NULL,
+        created_by INT REFERENCES account (id),
         created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
         summary TEXT NOT NULL,
         content TEXT NOT NULL,
 
-        FOREIGN KEY (doc, vord_num) REFERENCES vord (doc, num)
-            ON UPDATE CASCADE ON DELETE CASCADE
+        FOREIGN KEY (doc, vord_num) REFERENCES vord (doc, num) ON UPDATE CASCADE
     );
 
     CREATE INDEX ON vord (finish_at)
     WHERE num = -1;
 
-    CREATE INDEX ON ver (doc, vord_num, votes);
+    CREATE INDEX ON ver (doc, vord_num, votes DESC);
 COMMIT;

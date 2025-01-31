@@ -9,6 +9,11 @@ WHERE vote.ver = $1 AND vote.account = $2
 FOR UPDATE OF vote
 FOR SHARE OF vord;
 
+-- name: CountVotes :many
+SELECT ver, COUNT(*) AS votes FROM vote
+WHERE doc = $1 AND vote.vord_num = $2
+GROUP BY ver;
+
 -- name: CountVoters :one
 -- Assumes vord is locked
 SELECT COUNT(DISTINCT account) AS voters FROM vote

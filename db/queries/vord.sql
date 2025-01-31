@@ -7,6 +7,11 @@ INSERT INTO vord (doc, num, flags, start_at, finish_at)
 VALUES ($1, -1, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + CAST(sqlc.arg(duration) AS INTERVAL))
 ON CONFLICT DO NOTHING;
 
+-- name: LockVord :execrows
+SELECT 1 FROM vord
+WHERE doc = $1 AND num = -1
+FOR SHARE;
+
 -- name: FindVordForCommitByDocID :one
 SELECT sqlc.embed(vord), sqlc.embed(doc) FROM vord
     JOIN doc ON doc.id = vord.doc

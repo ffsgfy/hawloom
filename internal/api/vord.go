@@ -2,13 +2,11 @@ package api
 
 import (
 	// "database/sql"
-	"fmt"
 	"time"
 
 	"github.com/google/uuid"
 
 	"github.com/ffsgfy/hawloom/internal/db"
-	"github.com/ffsgfy/hawloom/internal/utils"
 )
 
 type VordFlags int32
@@ -20,7 +18,7 @@ const (
 
 func (sc *StateCtx) CreateVord(docID uuid.UUID, vordDuration time.Duration) error {
 	res, err := sc.Queries.CreateVord(sc.Ctx, &db.CreateVordParams{
-		Doc: docID,
+		Doc:      docID,
 		Duration: vordDuration,
 	})
 	if err != nil {
@@ -48,29 +46,14 @@ func (sc *StateCtx) commitVord(vord *db.Vord, majorityRule bool) (CommitStatus, 
 		return CommitStatusError, ErrCommitPastVord
 	}
 
-	verVotes, err := sc.Queries.UpdateAllVerVotes(sc.Ctx, &db.UpdateAllVerVotesParams{
-		Doc:     vord.Doc,
-		VordNum: vord.Num,
-	})
+	verVotes, err := sc.Queries.FindVersForCommit(sc.Ctx, vord.Doc)
 	if err != nil {
 		return CommitStatusError, err
 	}
-	if len(verVotes) == 0 {
+	if len(verVotes) == 0 || verVotes[0].Votes == 0 {
 		return CommitStatusNoVotes, nil
 	}
-
-	var maxVotes int32
-	var maxVotesTie bool
-	for _, row := range verVotes {
-		if row.Votes > maxVotes {
-			maxVotes = row.Votes
-			maxVotesTie = false
-		} else if row.Votes == maxVotes {
-			maxVotesTie = true
-		}
-	}
-
-	if maxVotesTie {
+	if len(verVotes) > 1 && verVotes[0].Votes == verVotes[1].Votes {
 		return CommitStatusTie, nil
 	}
 
@@ -82,8 +65,7 @@ func (sc *StateCtx) commitVord(vord *db.Vord, majorityRule bool) (CommitStatus, 
 		if err != nil {
 			return CommitStatusError, err
 		}
-
-		if int64(maxVotes) * 2 <= voters {
+		if int64(verVotes[0].Votes)*2 <= voters {
 			return CommitStatusNoMajority, nil
 		}
 	}

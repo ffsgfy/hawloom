@@ -27,25 +27,18 @@ LIMIT 1
 FOR UPDATE OF ver
 FOR SHARE OF vord;
 
--- name: UpdateVerIncVotes :exec
+-- name: FindVersForCommit :many
+-- Assumes vord is locked
+SELECT id, votes FROM ver
+WHERE doc = $1 AND vord_num = -1
+ORDER BY votes DESC
+LIMIT 2;
+
+-- name: UpdateVerVotes :exec
 -- Assumes ver is locked
 UPDATE ver
-SET votes = votes + 1, votes_updated_at = CURRENT_TIMESTAMP
+SET votes = votes + sqlc.arg(delta), votes_updated_at = CURRENT_TIMESTAMP
 WHERE id = $1;
-
--- name: UpdateAllVerVotes :many
--- Assumes all vers are locked
-WITH ver_votes AS (
-    SELECT vote.ver AS ver, COUNT(*) AS votes FROM vote
-    WHERE vote.doc = $1 AND vote.vord_num = $2
-    GROUP BY vote.ver
-    FOR UPDATE OF vote
-)
-UPDATE ver
-SET votes = ver_votes.votes, votes_updated_at = CURRENT_TIMESTAMP
-FROM ver_votes
-WHERE ver.id = ver_votes.ver
-RETURNING ver.id, ver.votes;
 
 -- name: DeleteVer :exec
 DELETE FROM ver WHERE id = $1;
