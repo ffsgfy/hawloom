@@ -98,11 +98,6 @@ FOR UPDATE OF ver
 FOR SHARE OF vord
 `
 
-type FindVerForVoteParams struct {
-	Ver     uuid.UUID `db:"ver"`
-	Account int32     `db:"account"`
-}
-
 type FindVerForVoteRow struct {
 	VordNum       int32     `db:"vord_num"`
 	CreatedBy     *int32    `db:"created_by"`
@@ -112,8 +107,8 @@ type FindVerForVoteRow struct {
 	DocVoteExists bool      `db:"doc_vote_exists"`
 }
 
-func (q *Queries) FindVerForVote(ctx context.Context, arg *FindVerForVoteParams) (*FindVerForVoteRow, error) {
-	row := q.db.QueryRow(ctx, findVerForVote, arg.Ver, arg.Account)
+func (q *Queries) FindVerForVote(ctx context.Context, ver uuid.UUID, account int32) (*FindVerForVoteRow, error) {
+	row := q.db.QueryRow(ctx, findVerForVote, ver, account)
 	var i FindVerForVoteRow
 	err := row.Scan(
 		&i.VordNum,
@@ -126,40 +121,28 @@ func (q *Queries) FindVerForVote(ctx context.Context, arg *FindVerForVoteParams)
 	return &i, err
 }
 
-const updateAllVerVotes = `-- name: UpdateAllVerVotes :many
-WITH ver_votes AS (
-    SELECT vote.ver AS ver, COUNT(*) AS votes FROM vote
-    WHERE vote.doc = $1 AND vote.vord_num = $2
-    GROUP BY vote.ver
-    FOR UPDATE OF vote
-)
-UPDATE ver
-SET votes = ver_votes.votes, votes_updated_at = CURRENT_TIMESTAMP
-FROM ver_votes
-WHERE ver.id = ver_votes.ver
-RETURNING ver.id, ver.votes
+const findVersForCommit = `-- name: FindVersForCommit :many
+SELECT id, votes FROM ver
+WHERE doc = $1 AND vord_num = -1
+ORDER BY votes DESC
+LIMIT 2
 `
 
-type UpdateAllVerVotesParams struct {
-	Doc     uuid.UUID `db:"doc"`
-	VordNum int32     `db:"vord_num"`
-}
-
-type UpdateAllVerVotesRow struct {
+type FindVersForCommitRow struct {
 	ID    uuid.UUID `db:"id"`
 	Votes int32     `db:"votes"`
 }
 
-// Assumes all vers are locked
-func (q *Queries) UpdateAllVerVotes(ctx context.Context, arg *UpdateAllVerVotesParams) ([]*UpdateAllVerVotesRow, error) {
-	rows, err := q.db.Query(ctx, updateAllVerVotes, arg.Doc, arg.VordNum)
+// Assumes vord is locked
+func (q *Queries) FindVersForCommit(ctx context.Context, doc uuid.UUID) ([]*FindVersForCommitRow, error) {
+	rows, err := q.db.Query(ctx, findVersForCommit, doc)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []*UpdateAllVerVotesRow
+	var items []*FindVersForCommitRow
 	for rows.Next() {
-		var i UpdateAllVerVotesRow
+		var i FindVersForCommitRow
 		if err := rows.Scan(&i.ID, &i.Votes); err != nil {
 			return nil, err
 		}
@@ -171,14 +154,14 @@ func (q *Queries) UpdateAllVerVotes(ctx context.Context, arg *UpdateAllVerVotesP
 	return items, nil
 }
 
-const updateVerIncVotes = `-- name: UpdateVerIncVotes :exec
+const updateVerVotes = `-- name: UpdateVerVotes :exec
 UPDATE ver
-SET votes = votes + 1, votes_updated_at = CURRENT_TIMESTAMP
+SET votes = votes + $2, votes_updated_at = CURRENT_TIMESTAMP
 WHERE id = $1
 `
 
 // Assumes ver is locked
-func (q *Queries) UpdateVerIncVotes(ctx context.Context, id uuid.UUID) error {
-	_, err := q.db.Exec(ctx, updateVerIncVotes, id)
+func (q *Queries) UpdateVerVotes(ctx context.Context, iD uuid.UUID, delta int32) error {
+	_, err := q.db.Exec(ctx, updateVerVotes, iD, delta)
 	return err
 }

@@ -21,10 +21,7 @@ func (sc *StateCtx) CreateVote(verID uuid.UUID) error {
 	var approval bool
 
 	if err = sc.Tx(func(sc *StateCtx) error {
-		row, err := sc.Queries.FindVerForVote(sc.Ctx, &db.FindVerForVoteParams{
-			Ver:     verID,
-			Account: authState.Account.ID,
-		})
+		row, err := sc.Queries.FindVerForVote(sc.Ctx, verID, authState.Account.ID)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				return ErrVerNotFound
@@ -59,10 +56,7 @@ func (sc *StateCtx) CreateVote(verID uuid.UUID) error {
 			return err
 		}
 
-		return sc.Queries.UpdateVerVotes(sc.Ctx, &db.UpdateVerVotesParams{
-			ID:    verID,
-			Delta: 1,
-		})
+		return sc.Queries.UpdateVerVotes(sc.Ctx, verID, 1)
 	}); err != nil {
 		return err
 	}
@@ -87,10 +81,9 @@ func (sc *StateCtx) DeleteVote(verID uuid.UUID) error {
 	var vote *db.Vote
 
 	if err = sc.Tx(func(sc *StateCtx) error {
-		if vote, err = sc.Queries.FindVoteForDelete(sc.Ctx, &db.FindVoteForDeleteParams{
-			Ver:     verID,
-			Account: authState.Account.ID,
-		}); err != nil {
+		if vote, err = sc.Queries.FindVoteForDelete(
+			sc.Ctx, verID, authState.Account.ID,
+		); err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				return ErrVoteNotFound
 			}
@@ -101,17 +94,13 @@ func (sc *StateCtx) DeleteVote(verID uuid.UUID) error {
 			return ErrDeletePastVote
 		}
 
-		if err = sc.Queries.DeleteVote(sc.Ctx, &db.DeleteVoteParams{
-			Ver:     verID,
-			Account: authState.Account.ID,
-		}); err != nil {
+		if err = sc.Queries.DeleteVote(
+			sc.Ctx, verID, authState.Account.ID,
+		); err != nil {
 			return err
 		}
 
-		return sc.Queries.UpdateVerVotes(sc.Ctx, &db.UpdateVerVotesParams{
-			ID:    verID,
-			Delta: -1,
-		})
+		return sc.Queries.UpdateVerVotes(sc.Ctx, verID, -1)
 	}); err != nil {
 		return err
 	}

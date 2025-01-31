@@ -22,13 +22,8 @@ SET flags = $2,
 WHERE v1.doc = $1 AND v1.num = -1
 `
 
-type CommitVordParams struct {
-	Doc   uuid.UUID `db:"doc"`
-	Flags int32     `db:"flags"`
-}
-
-func (q *Queries) CommitVord(ctx context.Context, arg *CommitVordParams) error {
-	_, err := q.db.Exec(ctx, commitVord, arg.Doc, arg.Flags)
+func (q *Queries) CommitVord(ctx context.Context, doc uuid.UUID, flags int32) error {
+	_, err := q.db.Exec(ctx, commitVord, doc, flags)
 	return err
 }
 
@@ -38,13 +33,8 @@ VALUES ($1, -1, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + CAST($2 AS INTERVAL))
 ON CONFLICT DO NOTHING
 `
 
-type CreateVordParams struct {
-	Doc      uuid.UUID     `db:"doc"`
-	Duration time.Duration `db:"duration"`
-}
-
-func (q *Queries) CreateVord(ctx context.Context, arg *CreateVordParams) (int64, error) {
-	result, err := q.db.Exec(ctx, createVord, arg.Doc, arg.Duration)
+func (q *Queries) CreateVord(ctx context.Context, doc uuid.UUID, duration time.Duration) (int64, error) {
+	result, err := q.db.Exec(ctx, createVord, doc, duration)
 	if err != nil {
 		return 0, err
 	}
@@ -123,6 +113,20 @@ func (q *Queries) FindVordForCommitByDocID(ctx context.Context, doc uuid.UUID) (
 		&i.Doc.VordDuration,
 	)
 	return &i, err
+}
+
+const lockVord = `-- name: LockVord :execrows
+SELECT 1 FROM vord
+WHERE doc = $1 AND num = -1
+FOR SHARE
+`
+
+func (q *Queries) LockVord(ctx context.Context, doc uuid.UUID) (int64, error) {
+	result, err := q.db.Exec(ctx, lockVord, doc)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const updateVord = `-- name: UpdateVord :exec

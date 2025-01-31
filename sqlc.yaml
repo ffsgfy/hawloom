@@ -13,6 +13,7 @@ sql:
         emit_pointers_for_null_types: true
         emit_params_struct_pointers: true
         emit_result_struct_pointers: true
+        query_parameter_limit: 2
         overrides:
           - db_type: "uuid"
             go_type:

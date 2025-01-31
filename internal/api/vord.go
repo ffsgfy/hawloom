@@ -17,10 +17,7 @@ const (
 )
 
 func (sc *StateCtx) CreateVord(docID uuid.UUID, vordDuration time.Duration) error {
-	res, err := sc.Queries.CreateVord(sc.Ctx, &db.CreateVordParams{
-		Doc:      docID,
-		Duration: vordDuration,
-	})
+	res, err := sc.Queries.CreateVord(sc.Ctx, docID, vordDuration)
 	if err != nil {
 		return err
 	}
@@ -58,10 +55,7 @@ func (sc *StateCtx) commitVord(vord *db.Vord, majorityRule bool) (CommitStatus, 
 	}
 
 	if majorityRule {
-		voters, err := sc.Queries.CountVoters(sc.Ctx, &db.CountVotersParams{
-			Doc:     vord.Doc,
-			VordNum: vord.Num,
-		})
+		voters, err := sc.Queries.CountVoters(sc.Ctx, vord.Doc, vord.Num)
 		if err != nil {
 			return CommitStatusError, err
 		}
@@ -70,10 +64,7 @@ func (sc *StateCtx) commitVord(vord *db.Vord, majorityRule bool) (CommitStatus, 
 		}
 	}
 
-	if err = sc.Queries.CommitVord(sc.Ctx, &db.CommitVordParams{
-		Doc:   vord.Doc,
-		Flags: 0,
-	}); err != nil {
+	if err = sc.Queries.CommitVord(sc.Ctx, vord.Doc, 0); err != nil {
 		return CommitStatusError, err
 	}
 

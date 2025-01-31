@@ -16,17 +16,43 @@ SELECT COUNT(DISTINCT account) AS voters FROM vote
 WHERE doc = $1 AND vord_num = $2
 `
 
-type CountVotersParams struct {
-	Doc     uuid.UUID `db:"doc"`
-	VordNum int32     `db:"vord_num"`
-}
-
 // Assumes vord is locked
-func (q *Queries) CountVoters(ctx context.Context, arg *CountVotersParams) (int64, error) {
-	row := q.db.QueryRow(ctx, countVoters, arg.Doc, arg.VordNum)
+func (q *Queries) CountVoters(ctx context.Context, doc uuid.UUID, vordNum int32) (int64, error) {
+	row := q.db.QueryRow(ctx, countVoters, doc, vordNum)
 	var voters int64
 	err := row.Scan(&voters)
 	return voters, err
+}
+
+const countVotes = `-- name: CountVotes :many
+SELECT ver, COUNT(*) AS votes FROM vote
+WHERE doc = $1 AND vote.vord_num = $2
+GROUP BY ver
+`
+
+type CountVotesRow struct {
+	Ver   uuid.UUID `db:"ver"`
+	Votes int64     `db:"votes"`
+}
+
+func (q *Queries) CountVotes(ctx context.Context, doc uuid.UUID, vordNum int32) ([]*CountVotesRow, error) {
+	rows, err := q.db.Query(ctx, countVotes, doc, vordNum)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*CountVotesRow
+	for rows.Next() {
+		var i CountVotesRow
+		if err := rows.Scan(&i.Ver, &i.Votes); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const createVote = `-- name: CreateVote :exec
@@ -55,13 +81,8 @@ const deleteVote = `-- name: DeleteVote :exec
 DELETE FROM vote WHERE ver = $1 AND account = $2
 `
 
-type DeleteVoteParams struct {
-	Ver     uuid.UUID `db:"ver"`
-	Account int32     `db:"account"`
-}
-
-func (q *Queries) DeleteVote(ctx context.Context, arg *DeleteVoteParams) error {
-	_, err := q.db.Exec(ctx, deleteVote, arg.Ver, arg.Account)
+func (q *Queries) DeleteVote(ctx context.Context, ver uuid.UUID, account int32) error {
+	_, err := q.db.Exec(ctx, deleteVote, ver, account)
 	return err
 }
 
@@ -73,13 +94,8 @@ FOR UPDATE OF vote
 FOR SHARE OF vord
 `
 
-type FindVoteForDeleteParams struct {
-	Ver     uuid.UUID `db:"ver"`
-	Account int32     `db:"account"`
-}
-
-func (q *Queries) FindVoteForDelete(ctx context.Context, arg *FindVoteForDeleteParams) (*Vote, error) {
-	row := q.db.QueryRow(ctx, findVoteForDelete, arg.Ver, arg.Account)
+func (q *Queries) FindVoteForDelete(ctx context.Context, ver uuid.UUID, account int32) (*Vote, error) {
+	row := q.db.QueryRow(ctx, findVoteForDelete, ver, account)
 	var i Vote
 	err := row.Scan(
 		&i.Ver,

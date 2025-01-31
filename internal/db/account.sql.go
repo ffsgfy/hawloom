@@ -27,13 +27,8 @@ ON CONFLICT (name) DO NOTHING
 RETURNING id, name, created_at, password_hash
 `
 
-type CreateAccountParams struct {
-	Name         string `db:"name"`
-	PasswordHash []byte `db:"password_hash"`
-}
-
-func (q *Queries) CreateAccount(ctx context.Context, arg *CreateAccountParams) (*Account, error) {
-	row := q.db.QueryRow(ctx, createAccount, arg.Name, arg.PasswordHash)
+func (q *Queries) CreateAccount(ctx context.Context, name string, passwordHash []byte) (*Account, error) {
+	row := q.db.QueryRow(ctx, createAccount, name, passwordHash)
 	var i Account
 	err := row.Scan(
 		&i.ID,

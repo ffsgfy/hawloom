@@ -66,10 +66,7 @@ func (sc *StateCtx) CreateAccount(name, password string) (*db.Account, error) {
 		return nil, err
 	}
 
-	account, err := sc.Queries.CreateAccount(sc.Ctx, &db.CreateAccountParams{
-		Name:         name,
-		PasswordHash: passwordHash,
-	})
+	account, err := sc.Queries.CreateAccount(sc.Ctx, name, passwordHash)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrAccountNameTaken
