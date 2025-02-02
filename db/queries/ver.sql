@@ -12,7 +12,7 @@ FOR UPDATE OF ver
 FOR SHARE OF vord;
 
 -- name: FindVerForVote :one
-SELECT ver.vord_num, ver.created_by, ver.doc AS doc_id, doc.flags AS doc_flags,
+SELECT ver.vord_num, ver.doc AS doc_id, doc.flags AS doc_flags,
     CAST(ver_vote.account IS NOT NULL AS BOOLEAN) AS ver_vote_exists,
     CAST(doc_vote.account IS NOT NULL AS BOOLEAN) AS doc_vote_exists
 FROM ver

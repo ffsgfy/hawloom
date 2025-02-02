@@ -34,14 +34,11 @@ func (sc *StateCtx) CreateVote(verID uuid.UUID) error {
 		if row.VordNum != -1 {
 			return ErrVotePastVer
 		}
-		if row.CreatedBy != nil && *row.CreatedBy == authState.Account.ID {
-			return ErrVoteOwnVer
-		}
 		if row.VerVoteExists {
 			return ErrVerVoteExists
 		}
 
-		if approval {
+		if !approval {
 			if row.DocVoteExists {
 				return ErrDocVoteExists
 			}

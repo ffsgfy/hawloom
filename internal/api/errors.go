@@ -35,7 +35,6 @@ var (
 	ErrDeletePastVer         = echo.NewHTTPError(http.StatusConflict, "cannot delete past ver")
 
 	ErrVotePastVer    = echo.NewHTTPError(http.StatusConflict, "cannot vote for past ver")
-	ErrVoteOwnVer     = echo.NewHTTPError(http.StatusConflict, "cannot vote for own ver")
 	ErrVerVoteExists  = echo.NewHTTPError(http.StatusConflict, "already voted for this ver")
 	ErrDocVoteExists  = echo.NewHTTPError(http.StatusConflict, "already voted for another ver")
 	ErrDeletePastVote = echo.NewHTTPError(http.StatusConflict, "cannot delete past vote")

@@ -35,7 +35,7 @@ func (sc *StateCtx) CreateVer(params *CreateVerParams) (*db.Ver, error) {
 			ID:        uuid.New(),
 			Doc:       params.DocID,
 			VordNum:   -1,
-			CreatedBy: &authState.Account.ID,
+			CreatedBy: authState.Account.ID,
 			Summary:   params.Summary,
 			Content:   params.Content,
 		})
@@ -73,7 +73,7 @@ func (sc *StateCtx) DeleteVer(id uuid.UUID) error {
 		}
 		docID = row.DocID
 
-		if row.CreatedBy == nil || *row.CreatedBy != authState.Account.ID {
+		if row.CreatedBy != authState.Account.ID {
 			return ErrForbidden
 		}
 

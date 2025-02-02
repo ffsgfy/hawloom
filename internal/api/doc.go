@@ -68,7 +68,7 @@ func (sc *StateCtx) CreateDoc(params *CreateDocParams) (*db.Doc, *db.Ver, error)
 			ID:        ver_id,
 			Doc:       doc_id,
 			VordNum:   0,
-			CreatedBy: &authState.Account.ID,
+			CreatedBy: authState.Account.ID,
 			Summary:   params.Summary,
 			Content:   params.Content,
 		})

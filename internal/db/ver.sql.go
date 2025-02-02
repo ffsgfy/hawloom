@@ -21,7 +21,7 @@ type CreateVerParams struct {
 	ID        uuid.UUID `db:"id"`
 	Doc       uuid.UUID `db:"doc"`
 	VordNum   int32     `db:"vord_num"`
-	CreatedBy *int32    `db:"created_by"`
+	CreatedBy int32     `db:"created_by"`
 	Summary   string    `db:"summary"`
 	Content   string    `db:"content"`
 }
@@ -70,7 +70,7 @@ FOR SHARE OF vord
 
 type FindVerForDeleteRow struct {
 	VordNum   int32     `db:"vord_num"`
-	CreatedBy *int32    `db:"created_by"`
+	CreatedBy int32     `db:"created_by"`
 	DocID     uuid.UUID `db:"doc_id"`
 }
 
@@ -82,7 +82,7 @@ func (q *Queries) FindVerForDelete(ctx context.Context, id uuid.UUID) (*FindVerF
 }
 
 const findVerForVote = `-- name: FindVerForVote :one
-SELECT ver.vord_num, ver.created_by, ver.doc AS doc_id, doc.flags AS doc_flags,
+SELECT ver.vord_num, ver.doc AS doc_id, doc.flags AS doc_flags,
     CAST(ver_vote.account IS NOT NULL AS BOOLEAN) AS ver_vote_exists,
     CAST(doc_vote.account IS NOT NULL AS BOOLEAN) AS doc_vote_exists
 FROM ver
@@ -100,7 +100,6 @@ FOR SHARE OF vord
 
 type FindVerForVoteRow struct {
 	VordNum       int32     `db:"vord_num"`
-	CreatedBy     *int32    `db:"created_by"`
 	DocID         uuid.UUID `db:"doc_id"`
 	DocFlags      int32     `db:"doc_flags"`
 	VerVoteExists bool      `db:"ver_vote_exists"`
@@ -112,7 +111,6 @@ func (q *Queries) FindVerForVote(ctx context.Context, ver uuid.UUID, account int
 	var i FindVerForVoteRow
 	err := row.Scan(
 		&i.VordNum,
-		&i.CreatedBy,
 		&i.DocID,
 		&i.DocFlags,
 		&i.VerVoteExists,

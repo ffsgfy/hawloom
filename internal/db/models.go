@@ -38,7 +38,7 @@ type Ver struct {
 	VordNum        int32     `db:"vord_num"`
 	Votes          int32     `db:"votes"`
 	VotesUpdatedAt time.Time `db:"votes_updated_at"`
-	CreatedBy      *int32    `db:"created_by"`
+	CreatedBy      int32     `db:"created_by"`
 	CreatedAt      time.Time `db:"created_at"`
 	Summary        string    `db:"summary"`
 	Content        string    `db:"content"`
