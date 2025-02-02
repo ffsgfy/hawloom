@@ -18,8 +18,9 @@ var (
 	ErrBothAccountIDAndName    = echo.NewHTTPError(http.StatusBadRequest, "both account id and name not supported")
 	ErrAccountNotFound         = echo.NewHTTPError(http.StatusNotFound, "account not found")
 	ErrAccountNameTooShort     = echo.NewHTTPError(http.StatusBadRequest, "account name too short")
+	ErrAccountNameTooLong      = echo.NewHTTPError(http.StatusBadRequest, "account name too long")
 	ErrAccountPasswordTooShort = echo.NewHTTPError(http.StatusBadRequest, "account password too short")
-	ErrPasswordTooLong         = echo.NewHTTPError(http.StatusBadRequest, "password too long")
+	ErrPasswordTooLong         = echo.NewHTTPError(http.StatusBadRequest, "account password too long")
 	ErrAccountNameTaken        = echo.NewHTTPError(http.StatusConflict, "account name already taken")
 
 	ErrMalformedToken = echo.NewHTTPError(http.StatusUnauthorized, "malformed token")
@@ -27,6 +28,7 @@ var (
 	ErrWrongTokenHash = echo.NewHTTPError(http.StatusUnauthorized, "wrong token hash")
 	ErrExpiredToken   = echo.NewHTTPError(http.StatusUnauthorized, "expired token")
 
+	ErrDocTitleTooLong       = echo.NewHTTPError(http.StatusNotFound, "doc title too long")
 	ErrRoundDurationTooSmall = echo.NewHTTPError(http.StatusBadRequest, "round duration too small")
 	ErrDocNotFound           = echo.NewHTTPError(http.StatusNotFound, "doc not found")
 	ErrVerNotFound           = echo.NewHTTPError(http.StatusNotFound, "ver not found")

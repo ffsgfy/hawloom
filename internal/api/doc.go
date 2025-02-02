@@ -19,7 +19,8 @@ const (
 )
 
 const (
-	MinVordDuration int32 = 10
+	DocTitleMaxLength = 256
+	VordMinDuration   = 10
 )
 
 type CreateDocParams struct {
@@ -31,7 +32,10 @@ type CreateDocParams struct {
 }
 
 func (sc *StateCtx) CreateDoc(params *CreateDocParams) (*db.Doc, *db.Ver, error) {
-	if params.VordDuration < MinVordDuration {
+	if len(params.Title) > DocTitleMaxLength {
+		return nil, nil, ErrDocTitleTooLong
+	}
+	if params.VordDuration < VordMinDuration {
 		return nil, nil, ErrRoundDurationTooSmall
 	}
 

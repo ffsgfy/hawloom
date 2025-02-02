@@ -12,6 +12,7 @@ import (
 
 const (
 	AccountNameMinLength     = 4
+	AccountNameMaxLength     = 36
 	AccountPasswordMinLength = 6
 )
 
@@ -46,6 +47,9 @@ func (sc *StateCtx) FindAccount(id *int32, name *string) (*db.Account, error) {
 func (sc *StateCtx) CreateAccount(name, password string) (*db.Account, error) {
 	if len(name) < AccountNameMinLength {
 		return nil, ErrAccountNameTooShort
+	}
+	if len(name) > AccountNameMaxLength {
+		return nil, ErrAccountNameTooLong
 	}
 	if len(password) < AccountPasswordMinLength {
 		return nil, ErrAccountPasswordTooShort

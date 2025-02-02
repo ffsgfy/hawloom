@@ -3,7 +3,7 @@
 BEGIN;
     CREATE TABLE doc (
         id UUID NOT NULL PRIMARY KEY,
-        title VARCHAR(256) NOT NULL,
+        title TEXT NOT NULL,
         flags INT NOT NULL,
         created_by INT NOT NULL REFERENCES account (id),
         created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -37,5 +37,5 @@ BEGIN;
     CREATE INDEX ON vord (finish_at)
     WHERE num = -1;
 
-    CREATE INDEX ON ver (doc, vord_num, votes DESC);
+    CREATE INDEX ON ver (doc, vord_num, votes);
 COMMIT;
