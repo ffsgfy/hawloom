@@ -71,6 +71,7 @@ func (sc *StateCtx) CreateDoc(params *CreateDocParams) (*db.Doc, *db.Ver, error)
 			CreatedBy: authState.Account.ID,
 			Summary:   params.Summary,
 			Content:   params.Content,
+			Diff:      nil, // TODO: initial diff
 		})
 
 		return err

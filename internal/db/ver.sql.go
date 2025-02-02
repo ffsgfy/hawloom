@@ -12,9 +12,9 @@ import (
 )
 
 const createVer = `-- name: CreateVer :one
-INSERT INTO ver (id, doc, vord_num, created_by, summary, content)
-VALUES ($1, $2, $3, $4, $5, $6)
-RETURNING id, doc, vord_num, votes, votes_updated_at, created_by, created_at, summary, content
+INSERT INTO ver (id, doc, vord_num, created_by, summary, content, diff)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
+RETURNING id, doc, vord_num, votes, votes_updated_at, created_by, created_at, summary, content, diff
 `
 
 type CreateVerParams struct {
@@ -24,6 +24,7 @@ type CreateVerParams struct {
 	CreatedBy int32     `db:"created_by"`
 	Summary   string    `db:"summary"`
 	Content   string    `db:"content"`
+	Diff      []byte    `db:"diff"`
 }
 
 func (q *Queries) CreateVer(ctx context.Context, arg *CreateVerParams) (*Ver, error) {
@@ -34,6 +35,7 @@ func (q *Queries) CreateVer(ctx context.Context, arg *CreateVerParams) (*Ver, er
 		arg.CreatedBy,
 		arg.Summary,
 		arg.Content,
+		arg.Diff,
 	)
 	var i Ver
 	err := row.Scan(
@@ -46,6 +48,7 @@ func (q *Queries) CreateVer(ctx context.Context, arg *CreateVerParams) (*Ver, er
 		&i.CreatedAt,
 		&i.Summary,
 		&i.Content,
+		&i.Diff,
 	)
 	return &i, err
 }

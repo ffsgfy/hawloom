@@ -30,6 +30,7 @@ BEGIN;
         created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
         summary TEXT NOT NULL,
         content TEXT NOT NULL,
+        diff BYTEA NOT NULL,
 
         FOREIGN KEY (doc, vord_num) REFERENCES vord (doc, num) ON UPDATE CASCADE
     );
