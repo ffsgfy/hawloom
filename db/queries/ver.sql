@@ -37,7 +37,7 @@ LIMIT 2;
 -- name: UpdateVerVotes :exec
 -- Assumes ver is locked
 UPDATE ver
-SET votes = votes + sqlc.arg(delta), votes_updated_at = CURRENT_TIMESTAMP
+SET votes = votes + sqlc.arg(delta)
 WHERE id = $1;
 
 -- name: DeleteVer :exec

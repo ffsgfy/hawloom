@@ -33,16 +33,15 @@ type Key struct {
 }
 
 type Ver struct {
-	ID             uuid.UUID `db:"id"`
-	Doc            uuid.UUID `db:"doc"`
-	VordNum        int32     `db:"vord_num"`
-	Votes          int32     `db:"votes"`
-	VotesUpdatedAt time.Time `db:"votes_updated_at"`
-	CreatedBy      int32     `db:"created_by"`
-	CreatedAt      time.Time `db:"created_at"`
-	Summary        string    `db:"summary"`
-	Content        string    `db:"content"`
-	Diff           []byte    `db:"diff"`
+	ID        uuid.UUID `db:"id"`
+	Doc       uuid.UUID `db:"doc"`
+	VordNum   int32     `db:"vord_num"`
+	Votes     int32     `db:"votes"`
+	CreatedBy int32     `db:"created_by"`
+	CreatedAt time.Time `db:"created_at"`
+	Summary   string    `db:"summary"`
+	Content   string    `db:"content"`
+	Diff      []byte    `db:"diff"`
 }
 
 type Vord struct {

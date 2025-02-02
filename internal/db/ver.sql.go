@@ -14,7 +14,7 @@ import (
 const createVer = `-- name: CreateVer :one
 INSERT INTO ver (id, doc, vord_num, created_by, summary, content, diff)
 VALUES ($1, $2, $3, $4, $5, $6, $7)
-RETURNING id, doc, vord_num, votes, votes_updated_at, created_by, created_at, summary, content, diff
+RETURNING id, doc, vord_num, votes, created_by, created_at, summary, content, diff
 `
 
 type CreateVerParams struct {
@@ -43,7 +43,6 @@ func (q *Queries) CreateVer(ctx context.Context, arg *CreateVerParams) (*Ver, er
 		&i.Doc,
 		&i.VordNum,
 		&i.Votes,
-		&i.VotesUpdatedAt,
 		&i.CreatedBy,
 		&i.CreatedAt,
 		&i.Summary,
@@ -157,7 +156,7 @@ func (q *Queries) FindVersForCommit(ctx context.Context, doc uuid.UUID) ([]*Find
 
 const updateVerVotes = `-- name: UpdateVerVotes :exec
 UPDATE ver
-SET votes = votes + $2, votes_updated_at = CURRENT_TIMESTAMP
+SET votes = votes + $2
 WHERE id = $1
 `
 

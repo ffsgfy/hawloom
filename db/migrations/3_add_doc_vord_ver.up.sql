@@ -25,7 +25,6 @@ BEGIN;
         doc UUID NOT NULL REFERENCES doc (id) ON DELETE CASCADE,
         vord_num INT NOT NULL,
         votes INT NOT NULL DEFAULT 0,
-        votes_updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
         created_by INT NOT NULL REFERENCES account (id),
         created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
         summary TEXT NOT NULL,
