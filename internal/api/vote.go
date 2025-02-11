@@ -12,7 +12,7 @@ import (
 )
 
 func (sc *StateCtx) CreateVote(verID uuid.UUID) error {
-	authState, err := GetValidAuthState(sc.Ctx)
+	authToken, err := GetValidAuthToken(sc.Ctx)
 	if err != nil {
 		return err
 	}
@@ -21,7 +21,7 @@ func (sc *StateCtx) CreateVote(verID uuid.UUID) error {
 	var approval bool
 
 	if err = sc.Tx(func(sc *StateCtx) error {
-		row, err := sc.Queries.FindVerForVote(sc.Ctx, verID, authState.Account.ID)
+		row, err := sc.Queries.FindVerForVote(sc.Ctx, verID, authToken.AccountID)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				return ErrVerNotFound
@@ -48,7 +48,7 @@ func (sc *StateCtx) CreateVote(verID uuid.UUID) error {
 			Ver:     verID,
 			Doc:     row.DocID,
 			VordNum: row.VordNum,
-			Account: authState.Account.ID,
+			Account: authToken.AccountID,
 		}); err != nil {
 			return err
 		}
@@ -60,7 +60,7 @@ func (sc *StateCtx) CreateVote(verID uuid.UUID) error {
 
 	ctxlog.Info(
 		sc.Ctx, "vote created",
-		"account_id", authState.Account.ID,
+		"account_id", authToken.AccountID,
 		"doc_id", docID,
 		"ver_id", verID,
 		"approval", approval,
@@ -70,7 +70,7 @@ func (sc *StateCtx) CreateVote(verID uuid.UUID) error {
 }
 
 func (sc *StateCtx) DeleteVote(verID uuid.UUID) error {
-	authState, err := GetValidAuthState(sc.Ctx)
+	authToken, err := GetValidAuthToken(sc.Ctx)
 	if err != nil {
 		return err
 	}
@@ -79,7 +79,7 @@ func (sc *StateCtx) DeleteVote(verID uuid.UUID) error {
 
 	if err = sc.Tx(func(sc *StateCtx) error {
 		if vote, err = sc.Queries.FindVoteForDelete(
-			sc.Ctx, verID, authState.Account.ID,
+			sc.Ctx, verID, authToken.AccountID,
 		); err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				return ErrVoteNotFound
@@ -92,7 +92,7 @@ func (sc *StateCtx) DeleteVote(verID uuid.UUID) error {
 		}
 
 		if err = sc.Queries.DeleteVote(
-			sc.Ctx, verID, authState.Account.ID,
+			sc.Ctx, verID, authToken.AccountID,
 		); err != nil {
 			return err
 		}
@@ -104,7 +104,7 @@ func (sc *StateCtx) DeleteVote(verID uuid.UUID) error {
 
 	ctxlog.Info(
 		sc.Ctx, "vote deleted",
-		"account_id", authState.Account.ID,
+		"account_id", authToken.AccountID,
 		"doc_id", vote.Doc,
 		"ver_id", vote.Ver,
 	)

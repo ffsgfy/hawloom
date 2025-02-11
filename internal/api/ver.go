@@ -17,10 +17,12 @@ type CreateVerParams struct {
 }
 
 func (sc *StateCtx) CreateVer(params *CreateVerParams) (*db.Ver, error) {
-	authState, err := GetValidAuthState(sc.Ctx)
+	authToken, err := GetValidAuthToken(sc.Ctx)
 	if err != nil {
 		return nil, err
 	}
+
+	// TODO: limit max summary/content size
 
 	var ver *db.Ver
 
@@ -36,7 +38,7 @@ func (sc *StateCtx) CreateVer(params *CreateVerParams) (*db.Ver, error) {
 			ID:        uuid.New(),
 			Doc:       params.DocID,
 			VordNum:   -1,
-			CreatedBy: authState.Account.ID,
+			CreatedBy: authToken.AccountID,
 			Summary:   params.Summary,
 			Content:   params.Content,
 			Diff:      nil,
@@ -49,7 +51,7 @@ func (sc *StateCtx) CreateVer(params *CreateVerParams) (*db.Ver, error) {
 
 	ctxlog.Info(
 		sc.Ctx, "ver created",
-		"account_id", authState.Account.ID,
+		"account_id", authToken.AccountID,
 		"doc_id", ver.Doc,
 		"ver_id", ver.ID,
 	)
@@ -58,7 +60,7 @@ func (sc *StateCtx) CreateVer(params *CreateVerParams) (*db.Ver, error) {
 }
 
 func (sc *StateCtx) DeleteVer(id uuid.UUID) error {
-	authState, err := GetValidAuthState(sc.Ctx)
+	authToken, err := GetValidAuthToken(sc.Ctx)
 	if err != nil {
 		return err
 	}
@@ -75,7 +77,7 @@ func (sc *StateCtx) DeleteVer(id uuid.UUID) error {
 		}
 		docID = row.DocID
 
-		if row.CreatedBy != authState.Account.ID {
+		if row.CreatedBy != authToken.AccountID {
 			return ErrForbidden
 		}
 
@@ -90,7 +92,7 @@ func (sc *StateCtx) DeleteVer(id uuid.UUID) error {
 
 	ctxlog.Info(
 		sc.Ctx, "ver deleted",
-		"account_id", authState.Account.ID,
+		"account_id", authToken.AccountID,
 		"doc_id", docID,
 		"ver_id", id,
 	)

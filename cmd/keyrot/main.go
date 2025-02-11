@@ -2,10 +2,11 @@ package main
 
 import (
 	"context"
+	"flag"
 	"os"
 
 	"github.com/ffsgfy/hawloom/internal/api"
-	"github.com/ffsgfy/hawloom/internal/utils"
+	"github.com/ffsgfy/hawloom/internal/config"
 	"github.com/ffsgfy/hawloom/internal/utils/ctxlog"
 )
 
@@ -13,7 +14,16 @@ func main() {
 	ctxlog.SetDefault(ctxlog.New(os.Stdout, ctxlog.INFO))
 	ctx := context.Background()
 
-	state, err := api.NewState(ctx, utils.MakePostgresURIFromEnv(false))
+	configPath := flag.String("c", "", "config file path")
+	flag.Parse()
+
+	config, err := config.Load(*configPath)
+	if err != nil {
+		ctxlog.Error2(ctx, "failed to load config", err)
+		panic(err)
+	}
+
+	state, err := api.NewState(ctx, config)
 	if err != nil {
 		ctxlog.Error2(ctx, "failed to initialize state", err)
 		panic(err)

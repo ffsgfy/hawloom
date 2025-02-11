@@ -2,14 +2,15 @@ package main
 
 import (
 	"context"
+	"flag"
 	"os"
-	"strconv"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/gommon/log"
 
 	"github.com/ffsgfy/hawloom/internal/api"
 	"github.com/ffsgfy/hawloom/internal/api/handlers"
+	"github.com/ffsgfy/hawloom/internal/config"
 	"github.com/ffsgfy/hawloom/internal/utils"
 	"github.com/ffsgfy/hawloom/internal/utils/ctxlog"
 )
@@ -18,14 +19,16 @@ func main() {
 	ctxlog.SetDefault(ctxlog.New(os.Stdout, ctxlog.INFO))
 	ctx := context.Background()
 
-	portStr := os.Getenv("HAWLOOM_PORT")
-	port, err := strconv.ParseUint(portStr, 10, 16)
+	configPath := flag.String("c", "", "config file path")
+	flag.Parse()
+
+	config, err := config.Load(*configPath)
 	if err != nil {
-		ctxlog.Error2(ctx, "invalid server port specified", err, "port", portStr)
+		ctxlog.Error2(ctx, "failed to load config", err)
 		panic(err)
 	}
 
-	state, err := api.NewState(ctx, utils.MakePostgresURIFromEnv(false))
+	state, err := api.NewState(ctx, config)
 	if err != nil {
 		ctxlog.Error2(ctx, "failed to initialize state", err)
 		panic(err)
@@ -43,5 +46,5 @@ func main() {
 
 	handlers.AddHandlers(e, state)
 
-	utils.RunEcho(ctx, e, uint16(port))
+	utils.RunEcho(ctx, e, config.HTTP.BindPort.V)
 }

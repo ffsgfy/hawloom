@@ -18,12 +18,6 @@ import (
 	"github.com/ffsgfy/hawloom/internal/utils/ctxlog"
 )
 
-const (
-	KeySize    = 32
-	TokenTTL   = 60 * 60 * 8
-	AuthCookie = "auth"
-)
-
 type AuthKey db.Key
 
 type Auth struct {
@@ -48,7 +42,7 @@ func (a *Auth) GetKey(id int32) *AuthKey {
 }
 
 func (sc *StateCtx) CreateAuthKey() (*AuthKey, error) {
-	data := make([]byte, KeySize)
+	data := make([]byte, sc.Config.Auth.KeySize.V)
 	if _, err := rand.Reader.Read(data); err != nil {
 		return nil, fmt.Errorf("failed to generate key data: %w", err)
 	}
@@ -132,11 +126,11 @@ func CheckHMAC(data, key, hm []byte) (bool, error) {
 	return hmac.Equal(dataHM, hm), nil
 }
 
-func CreateAuthToken(key *AuthKey, accountID int32) *AuthToken {
+func CreateAuthToken(key *AuthKey, accountID int32, ttl int) *AuthToken {
 	return &AuthToken{
 		AccountID: accountID,
 		KeyID:     key.ID,
-		Expires:   time.Now().Unix() + TokenTTL,
+		Expires:   time.Now().Unix() + int64(ttl),
 	}
 }
 
@@ -173,28 +167,27 @@ func DecodeAuthToken(str string) (*AuthToken, []byte, []byte, error) {
 	return &token, data[:size], data[size:], nil
 }
 
-func CreateAuthCookie(key *AuthKey, token *AuthToken) (*http.Cookie, error) {
+func CreateAuthCookie(key *AuthKey, token *AuthToken, name string) (*http.Cookie, error) {
 	tokenStr, err := EncodeAuthToken(key, token)
 	if err != nil {
 		return nil, err
 	}
 
 	return &http.Cookie{
-		Name:     AuthCookie,
+		Name:     name,
 		Value:    tokenStr,
-		MaxAge:   TokenTTL,
+		MaxAge:   int(token.TTL()),
 		SameSite: http.SameSiteStrictMode,
 	}, nil
 }
 
 type AuthState struct {
-	Token   *AuthToken
-	Account *db.Account
-	Error   error
+	Token *AuthToken
+	Error error
 }
 
 func (a *AuthState) Valid() bool {
-	return a.Error == nil && a.Account != nil && a.Token != nil
+	return a.Error == nil && a.Token != nil
 }
 
 type authStateKeyType struct{}
@@ -212,10 +205,10 @@ func GetAuthState(ctx context.Context) *AuthState {
 	return nil
 }
 
-func GetValidAuthState(ctx context.Context) (*AuthState, error) {
+func GetValidAuthToken(ctx context.Context) (*AuthToken, error) {
 	if authState := GetAuthState(ctx); authState != nil {
 		if authState.Valid() {
-			return authState, nil
+			return authState.Token, nil
 		}
 		if authState.Error != nil {
 			return nil, authState.Error
@@ -224,40 +217,32 @@ func GetValidAuthState(ctx context.Context) (*AuthState, error) {
 	return nil, ErrUnauthorized
 }
 
-func (sc *StateCtx) CheckAuthToken(tokenStr string) (*AuthToken, *db.Account, error) {
+func (s *State) CheckAuthToken(tokenStr string) (*AuthToken, error) {
 	token, data, hm, err := DecodeAuthToken(tokenStr)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	key := sc.Auth.GetKey(token.KeyID)
+	key := s.Auth.GetKey(token.KeyID)
 	if key == nil {
-		return token, nil, ErrNoTokenKey
+		return token, ErrNoTokenKey
 	}
 
 	if ok, err := CheckHMAC(data, key.Data, hm); err != nil {
-		return token, nil, err
+		return token, err
 	} else if !ok {
-		return token, nil, ErrWrongTokenHash
+		return token, ErrWrongTokenHash
 	}
 
-	if token.TTL() < 0 {
-		return token, nil, ErrExpiredToken
+	if token.TTL() <= 0 {
+		return token, ErrExpiredToken
 	}
 
-	account, err := sc.FindAccount(&token.AccountID, nil)
-	if err != nil {
-		if errors.Is(err, ErrAccountNotFound) {
-			return token, nil, ErrUnauthorized.WithInternal(err)
-		}
-		return token, nil, err
-	}
-
-	return token, account, nil
+	return token, nil
 }
 
-func (sc *StateCtx) CreateAuthState(tokenStr string) *AuthState {
+func (s *State) CreateAuthState(tokenStr string) *AuthState {
 	state := AuthState{}
-	state.Token, state.Account, state.Error = sc.CheckAuthToken(tokenStr)
+	state.Token, state.Error = s.CheckAuthToken(tokenStr)
 	return &state
 }

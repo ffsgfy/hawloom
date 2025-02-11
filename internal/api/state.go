@@ -6,22 +6,26 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/ffsgfy/hawloom/internal/config"
 	"github.com/ffsgfy/hawloom/internal/db"
 )
 
 type State struct {
+	Config  *config.Config
 	Pool    *pgxpool.Pool
 	Queries *db.Queries
 	Auth    *Auth
 }
 
-func NewState(ctx context.Context, dbURI string) (*State, error) {
+func NewState(ctx context.Context, config *config.Config) (*State, error) {
+	dbURI := config.DB.MakePostgresURI()
 	pool, err := pgxpool.New(ctx, dbURI)
 	if err != nil {
 		return nil, err
 	}
 
 	return &State{
+		Config:  config,
 		Pool:    pool,
 		Queries: db.New(pool),
 		Auth:    NewAuth(),

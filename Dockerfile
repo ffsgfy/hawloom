@@ -16,6 +16,6 @@ USER root
 RUN apk add curl
 
 USER guest
-COPY --from=build /build/hawloom ./
+COPY --from=build /build/hawloom /usr/bin/
 
-CMD ["./hawloom"]
+ENTRYPOINT ["/usr/bin/hawloom"]

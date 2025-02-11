@@ -20,7 +20,7 @@ var (
 	ErrAccountNameTooShort     = echo.NewHTTPError(http.StatusBadRequest, "account name too short")
 	ErrAccountNameTooLong      = echo.NewHTTPError(http.StatusBadRequest, "account name too long")
 	ErrAccountPasswordTooShort = echo.NewHTTPError(http.StatusBadRequest, "account password too short")
-	ErrPasswordTooLong         = echo.NewHTTPError(http.StatusBadRequest, "account password too long")
+	ErrAccountPasswordTooLong  = echo.NewHTTPError(http.StatusBadRequest, "account password too long")
 	ErrAccountNameTaken        = echo.NewHTTPError(http.StatusConflict, "account name already taken")
 
 	ErrMalformedToken = echo.NewHTTPError(http.StatusUnauthorized, "malformed token")

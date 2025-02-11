@@ -18,11 +18,6 @@ const (
 	DocFlagMajority DocFlags = 1 << 2
 )
 
-const (
-	DocTitleMaxLength = 256
-	VordMinDuration   = 10
-)
-
 type CreateDocParams struct {
 	Title        string
 	Summary      string
@@ -32,14 +27,16 @@ type CreateDocParams struct {
 }
 
 func (sc *StateCtx) CreateDoc(params *CreateDocParams) (*db.Doc, *db.Ver, error) {
-	if len(params.Title) > DocTitleMaxLength {
+	if len(params.Title) > sc.Config.Doc.TitleMaxLength.V {
 		return nil, nil, ErrDocTitleTooLong
 	}
-	if params.VordDuration < VordMinDuration {
+	if params.VordDuration < sc.Config.Doc.VordMinDuration.V {
 		return nil, nil, ErrRoundDurationTooSmall
 	}
 
-	authState, err := GetValidAuthState(sc.Ctx)
+	// TODO: limit max summary/content size
+
+	authToken, err := GetValidAuthToken(sc.Ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -54,7 +51,7 @@ func (sc *StateCtx) CreateDoc(params *CreateDocParams) (*db.Doc, *db.Ver, error)
 			ID:           doc_id,
 			Title:        params.Title,
 			Flags:        int32(params.Flags),
-			CreatedBy:    authState.Account.ID,
+			CreatedBy:    authToken.AccountID,
 			VordDuration: params.VordDuration,
 		}); err != nil {
 			return err
@@ -68,7 +65,7 @@ func (sc *StateCtx) CreateDoc(params *CreateDocParams) (*db.Doc, *db.Ver, error)
 			ID:        ver_id,
 			Doc:       doc_id,
 			VordNum:   0,
-			CreatedBy: authState.Account.ID,
+			CreatedBy: authToken.AccountID,
 			Summary:   params.Summary,
 			Content:   params.Content,
 			Diff:      nil, // TODO: initial diff
@@ -82,7 +79,7 @@ func (sc *StateCtx) CreateDoc(params *CreateDocParams) (*db.Doc, *db.Ver, error)
 	// TODO: log flags
 	ctxlog.Info(
 		sc.Ctx, "doc created",
-		"account_id", authState.Account.ID,
+		"account_id", authToken.AccountID,
 		"doc_id", doc_id,
 		"ver_id", ver_id,
 	)
@@ -91,7 +88,7 @@ func (sc *StateCtx) CreateDoc(params *CreateDocParams) (*db.Doc, *db.Ver, error)
 }
 
 func (sc *StateCtx) DeleteDoc(id uuid.UUID) error {
-	authState, err := GetValidAuthState(sc.Ctx)
+	authToken, err := GetValidAuthToken(sc.Ctx)
 	if err != nil {
 		return err
 	}
@@ -104,7 +101,7 @@ func (sc *StateCtx) DeleteDoc(id uuid.UUID) error {
 		return err
 	}
 
-	if doc.CreatedBy != authState.Account.ID {
+	if doc.CreatedBy != authToken.AccountID {
 		return ErrForbidden
 	}
 
@@ -115,7 +112,7 @@ func (sc *StateCtx) DeleteDoc(id uuid.UUID) error {
 
 	ctxlog.Info(
 		sc.Ctx, "doc deleted",
-		"account_id", authState.Account.ID,
+		"account_id", authToken.AccountID,
 		"doc_id", id,
 	)
 

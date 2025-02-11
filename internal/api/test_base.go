@@ -9,7 +9,7 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/ffsgfy/hawloom/internal/utils"
+	"github.com/ffsgfy/hawloom/internal/config"
 )
 
 type TestDBSuite struct {
@@ -19,9 +19,10 @@ type TestDBSuite struct {
 }
 
 func (suite *TestDBSuite) SetupSuite() {
-	var err error
-	dbURI := utils.MakePostgresURIFromEnv(true)
+	config, err := config.Load("./config/ut.json")
+	suite.Require().NoError(err)
 
+	dbURI := config.DB.MakePostgresURI()
 	suite.m, err = migrate.New("file://../../db/migrations/", dbURI)
 	suite.Require().NoError(err)
 
@@ -32,6 +33,6 @@ func (suite *TestDBSuite) SetupSuite() {
 		suite.Require().NoError(err)
 	}
 
-	suite.s, err = NewState(context.Background(), dbURI)
+	suite.s, err = NewState(context.Background(), config)
 	suite.Require().NoError(err)
 }

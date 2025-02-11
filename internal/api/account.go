@@ -10,12 +10,6 @@ import (
 	"github.com/ffsgfy/hawloom/internal/utils/ctxlog"
 )
 
-const (
-	AccountNameMinLength     = 4
-	AccountNameMaxLength     = 36
-	AccountPasswordMinLength = 6
-)
-
 func (sc *StateCtx) FindAccount(id *int32, name *string) (*db.Account, error) {
 	if id == nil && name == nil {
 		return nil, ErrNoAccountIDOrName
@@ -44,15 +38,25 @@ func (sc *StateCtx) FindAccount(id *int32, name *string) (*db.Account, error) {
 	return account, nil
 }
 
+func (s *State) checkAccountNamePasswordLengths(name, password string) error {
+	if len(name) < s.Config.Account.NameMinLength.V {
+		return ErrAccountNameTooShort
+	}
+	if len(name) > s.Config.Account.NameMaxLength.V {
+		return ErrAccountNameTooLong
+	}
+	if len(password) < s.Config.Account.PasswordMinLength.V {
+		return ErrAccountPasswordTooShort
+	}
+	if len(password) > s.Config.Account.PasswordMaxLength.V {
+		return ErrAccountPasswordTooLong
+	}
+	return nil
+}
+
 func (sc *StateCtx) CreateAccount(name, password string) (*db.Account, error) {
-	if len(name) < AccountNameMinLength {
-		return nil, ErrAccountNameTooShort
-	}
-	if len(name) > AccountNameMaxLength {
-		return nil, ErrAccountNameTooLong
-	}
-	if len(password) < AccountPasswordMinLength {
-		return nil, ErrAccountPasswordTooShort
+	if err := sc.checkAccountNamePasswordLengths(name, password); err != nil {
+		return nil, err
 	}
 
 	// Check if name exists before hashing the password
@@ -65,7 +69,7 @@ func (sc *StateCtx) CreateAccount(name, password string) (*db.Account, error) {
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		if errors.Is(err, bcrypt.ErrPasswordTooLong) {
-			return nil, ErrPasswordTooLong
+			return nil, ErrAccountPasswordTooLong
 		}
 		return nil, err
 	}
@@ -88,11 +92,8 @@ func (sc *StateCtx) CreateAccount(name, password string) (*db.Account, error) {
 }
 
 func (sc *StateCtx) CheckPassword(name, password string) (*db.Account, error) {
-	if len(name) < AccountNameMinLength {
-		return nil, ErrAccountNameTooShort
-	}
-	if len(password) < AccountPasswordMinLength {
-		return nil, ErrAccountPasswordTooShort
+	if err := sc.checkAccountNamePasswordLengths(name, password); err != nil {
+		return nil, err
 	}
 
 	account, err := sc.FindAccount(nil, &name)

@@ -1,6 +1,7 @@
 name: hawloom
 
 x-hawloom-base: &hawloom-base
+  command: ["-c", "/etc/hawloom/config/dev.json"]
   environment:
     POSTGRES_USER: ${POSTGRES_USER}
     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -8,8 +9,9 @@ x-hawloom-base: &hawloom-base
     POSTGRES_PORT: ${POSTGRES_PORT}
     HAWLOOM_PORT: ${HAWLOOM_PORT}
   ports:
-    - "[::1]:${HAWLOOM_PORT}:${HAWLOOM_PORT}"
-  volumes: []
+    - "127.0.0.1:${HAWLOOM_PORT}:${HAWLOOM_PORT}"
+  volumes:
+    - ./config/:/etc/hawloom/config/:ro
   networks:
     - hawloom-net
   healthcheck:
@@ -42,7 +44,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       PGPORT: ${POSTGRES_PORT}
     ports:
-      - "[::1]:${POSTGRES_PORT}:${POSTGRES_PORT}"
+      - "127.0.0.1:${POSTGRES_PORT}:${POSTGRES_PORT}"
     volumes:
       - db-data:/var/lib/postgresql/data
     networks:
