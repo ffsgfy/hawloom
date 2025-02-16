@@ -54,7 +54,7 @@ func main() {
 
 	handlers.AddHandlers(e, state)
 
-	utils.RunEcho(ctx, e, config.HTTP.BindPort.V)
+	utils.RunEcho(ctx, e, config.HTTP.BindAddress.V, config.HTTP.BindPort.V)
 
 	ctxlog.Info(ctx, "waiting for background tasks")
 	for _, cancel := range state.TasksCancel {
