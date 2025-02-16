@@ -22,7 +22,14 @@
         "password_max_length": 48
     },
     "doc": {
-        "title_max_length": 256,
-        "vord_min_duration": 10
+        "title_max_length": 256
+    },
+    "vord": {
+        "min_duration": 10,
+        "duration_extension": 0.1,
+        "autocommit_period": 2
+    },
+    "misc": {
+        "log_level": -4
     }
 }

@@ -30,7 +30,7 @@ func (sc *StateCtx) CreateDoc(params *CreateDocParams) (*db.Doc, *db.Ver, error)
 	if len(params.Title) > sc.Config.Doc.TitleMaxLength.V {
 		return nil, nil, ErrDocTitleTooLong
 	}
-	if params.VordDuration < sc.Config.Doc.VordMinDuration.V {
+	if params.VordDuration < sc.Config.Vord.MinDuration.V {
 		return nil, nil, ErrRoundDurationTooSmall
 	}
 
@@ -61,17 +61,18 @@ func (sc *StateCtx) CreateDoc(params *CreateDocParams) (*db.Doc, *db.Ver, error)
 			return err
 		}
 
-		ver, err = sc.Queries.CreateVer(sc.Ctx, &db.CreateVerParams{
+		if ver, err = sc.Queries.CreateVer(sc.Ctx, &db.CreateVerParams{
 			ID:        ver_id,
 			Doc:       doc_id,
 			VordNum:   0,
 			CreatedBy: authToken.AccountID,
 			Summary:   params.Summary,
 			Content:   params.Content,
-			Diff:      nil, // TODO: initial diff
-		})
+		}); err != nil {
+			return err
+		}
 
-		return err
+		return sc.CreateVord(doc_id, params.VordDuration)
 	}); err != nil {
 		return nil, nil, err
 	}

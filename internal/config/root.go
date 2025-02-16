@@ -42,8 +42,17 @@ type AccountConfig struct {
 }
 
 type DocConfig struct {
-	TitleMaxLength  Value[int]   `json:"title_max_length"`
-	VordMinDuration Value[int32] `json:"vord_min_duration"`
+	TitleMaxLength Value[int] `json:"title_max_length"`
+}
+
+type VordConfig struct {
+	MinDuration       Value[int32]   `json:"min_duration"`
+	DurationExtension Value[float64] `json:"duration_extension"`
+	AutocommitPeriod  Value[int32]   `json:"autocommit_period"`
+}
+
+type MiscConfig struct {
+	LogLevel Value[int] `json:"log_level"`
 }
 
 type Config struct {
@@ -52,6 +61,8 @@ type Config struct {
 	Auth    AuthConfig    `json:"auth"`
 	Account AccountConfig `json:"account"`
 	Doc     DocConfig     `json:"doc"`
+	Vord    VordConfig    `json:"vord"`
+	Misc    MiscConfig    `json:"misc"`
 }
 
 func Parse(data []byte) (*Config, error) {

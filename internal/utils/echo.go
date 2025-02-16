@@ -27,11 +27,11 @@ func RunEcho(ctx context.Context, e *echo.Echo, port uint16) {
 
 	<-ctx.Done()
 
-	ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	ctxlog.Info(ctx, "server shutting down")
 
-	if err := e.Shutdown(ctx); err != nil {
+	if err := e.Shutdown(shutdownCtx); err != nil {
 		ctxlog.Error2(ctx, "failed to shut down server", err)
 		e.Close()
 	}

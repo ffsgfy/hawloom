@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"sync"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -15,6 +16,9 @@ type State struct {
 	Pool    *pgxpool.Pool
 	Queries *db.Queries
 	Auth    *Auth
+
+	TasksWG     *sync.WaitGroup
+	TasksCancel []context.CancelFunc
 }
 
 func NewState(ctx context.Context, config *config.Config) (*State, error) {
@@ -29,6 +33,7 @@ func NewState(ctx context.Context, config *config.Config) (*State, error) {
 		Pool:    pool,
 		Queries: db.New(pool),
 		Auth:    NewAuth(),
+		TasksWG: new(sync.WaitGroup),
 	}, nil
 }
 

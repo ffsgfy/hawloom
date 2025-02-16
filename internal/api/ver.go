@@ -27,7 +27,6 @@ func (sc *StateCtx) CreateVer(params *CreateVerParams) (*db.Ver, error) {
 	var ver *db.Ver
 
 	if err = sc.Tx(func(sc *StateCtx) error {
-		// TODO: fetch previous ver, calculate diff
 		if res, err := sc.Queries.LockVord(sc.Ctx, params.DocID); err != nil {
 			return err
 		} else if res == 0 {
@@ -41,7 +40,6 @@ func (sc *StateCtx) CreateVer(params *CreateVerParams) (*db.Ver, error) {
 			CreatedBy: authToken.AccountID,
 			Summary:   params.Summary,
 			Content:   params.Content,
-			Diff:      nil,
 		})
 
 		return err

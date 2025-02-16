@@ -41,7 +41,6 @@ type Ver struct {
 	CreatedAt time.Time `db:"created_at"`
 	Summary   string    `db:"summary"`
 	Content   string    `db:"content"`
-	Diff      []byte    `db:"diff"`
 }
 
 type Vord struct {

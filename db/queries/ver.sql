@@ -1,6 +1,6 @@
 -- name: CreateVer :one
-INSERT INTO ver (id, doc, vord_num, created_by, summary, content, diff)
-VALUES ($1, $2, $3, $4, $5, $6, $7)
+INSERT INTO ver (id, doc, vord_num, created_by, summary, content)
+VALUES ($1, $2, $3, $4, $5, $6)
 RETURNING *;
 
 -- name: FindVerForDelete :one

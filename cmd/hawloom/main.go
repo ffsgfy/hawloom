@@ -28,6 +28,10 @@ func main() {
 		panic(err)
 	}
 
+	logger := ctxlog.New(os.Stdout, ctxlog.Level(config.Misc.LogLevel.V))
+	ctxlog.SetDefault(logger)
+	ctx = ctxlog.WithLogger(ctx, logger)
+
 	state, err := api.NewState(ctx, config)
 	if err != nil {
 		ctxlog.Error2(ctx, "failed to initialize state", err)
@@ -39,6 +43,10 @@ func main() {
 		panic(err)
 	}
 
+	autocommitCtx, autocommitCancel := context.WithCancel(ctx)
+	state.TasksCancel = append(state.TasksCancel, autocommitCancel)
+	go state.Ctx(autocommitCtx).RunAutocommit()
+
 	e := echo.New()
 	e.HideBanner = true
 	e.HidePort = true
@@ -47,4 +55,10 @@ func main() {
 	handlers.AddHandlers(e, state)
 
 	utils.RunEcho(ctx, e, config.HTTP.BindPort.V)
+
+	ctxlog.Info(ctx, "waiting for background tasks")
+	for _, cancel := range state.TasksCancel {
+		cancel()
+	}
+	state.TasksWG.Wait()
 }
