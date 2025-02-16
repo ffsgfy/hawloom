@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hawloom-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hawloom
+  template:
+    metadata:
+      labels:
+        app: hawloom
+    spec:
+      containers:
+      - name: hawloom
+        image: ffsgfy/hawloom:latest
+        args: [-c, /etc/hawloom/config/config.json]
+        ports:
+        - containerPort: 22440
+          name: hawloom-port
+        startupProbe:
+          httpGet: &healthcheck-probe
+            path: /healthcheck
+            port: hawloom-port
+          periodSeconds: 2
+          failureThreshold: 120
+        readinessProbe:
+          httpGet: *healthcheck-probe
+          periodSeconds: 10
+        env:
+        - name: POSTGRES_HOST
+          valueFrom:
+            secretKeyRef:
+              name: hawloom-secret
+              key: postgres-host
+        - name: POSTGRES_PORT
+          valueFrom:
+            secretKeyRef:
+              name: hawloom-secret
+              key: postgres-port
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: hawloom-secret
+              key: postgres-user
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: hawloom-secret
+              key: postgres-password
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/hawloom/config
+          readOnly: true
+      volumes:
+      - name: config-volume
+        configMap:
+          name: hawloom-config
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hawloom-service
+spec:
+  selector:
+    app: hawloom
+  ports:
+  - port: 80
+    targetPort: hawloom-port
+  type: ClusterIP

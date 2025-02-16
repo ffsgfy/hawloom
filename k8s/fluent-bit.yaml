@@ -1,0 +1,149 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluent-bit-config
+data:
+  fluent-bit.conf: |
+    [SERVICE]
+      Flush 1
+      Daemon off
+      HTTP_Server On
+      HTTP_Listen 0.0.0.0
+      HTTP_Port 2020
+      Health_Check On
+
+    [INPUT]
+      Name tail
+      Path /var/log/containers/*hawloom*.log
+      Tag kube.*
+      Mem_Buf_Limit 5MB
+      Skip_Long_Lines On
+      Skip_Empty_Lines On
+      multiline.parser docker, cri
+
+    [OUTPUT]
+      Name forward
+      Match kube.*
+      Host fluent-bit-sink-service
+      Compress gzip
+
+  fluent-bit-sink.conf: |
+    [SERVICE]
+      Flush 1
+      Daemon off
+      HTTP_Server On
+      HTTP_Listen 0.0.0.0
+      HTTP_Port 2020
+      Health_Check On
+
+    [INPUT]
+      Name forward
+      Buffer_Max_Size 1M
+
+    [FILTER]
+      Name modify
+      Match *
+      Remove time
+
+    [OUTPUT]
+      Name stdout
+      Match *
+      Format json_lines
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: fluent-bit-sink
+  labels:
+    app: fluent-bit-sink
+  annotations:
+    fluentbit.io/exclude: "true"
+spec:
+  containers:
+  - name: fluent-bit
+    image: fluent/fluent-bit:3.2.6
+    args: [--workdir=/fluent-bit/etc, --config=/fluent-bit/etc/conf/fluent-bit-sink.conf]
+    livenessProbe:
+      httpGet:
+        path: /
+        port: 2020
+    readinessProbe:
+      httpGet:
+        path: /api/v1/health
+        port: 2020
+    volumeMounts:
+    - name: config-volume
+      mountPath: /fluent-bit/etc/conf
+      readOnly: true
+  volumes:
+  - name: config-volume
+    configMap:
+      name: fluent-bit-config
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fluent-bit-sink-service
+spec:
+  selector:
+    app: fluent-bit-sink
+  ports:
+  - port: 24224
+    targetPort: 24224
+  type: ClusterIP
+  clusterIP: None
+
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: fluent-bit-daemonset
+spec:
+  selector:
+    matchLabels:
+      app: fluent-bit
+  template:
+    metadata:
+      labels:
+        app: fluent-bit
+    spec:
+      containers:
+      - name: fluent-bit
+        image: fluent/fluent-bit:3.2.6
+        args: [--workdir=/fluent-bit/etc, --config=/fluent-bit/etc/conf/fluent-bit.conf]
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 2020
+        readinessProbe:
+          httpGet:
+            path: /api/v1/health
+            port: 2020
+        volumeMounts:
+        - name: varlog-volume
+          mountPath: /var/log
+        - name: varlibdockercontainers-volume
+          mountPath: /var/lib/docker/containers
+          readOnly: true
+        - name: etcmachineid-volume
+          mountPath: /etc/machine-id
+          readOnly: true
+        - name: config-volume
+          mountPath: /fluent-bit/etc/conf
+          readOnly: true
+      volumes:
+      - name: varlog-volume
+        hostPath:
+          path: /var/log
+      - name: varlibdockercontainers-volume
+        hostPath:
+          path: /var/lib/docker/containers
+      - name: etcmachineid-volume
+        hostPath:
+          path: /etc/machine-id
+          type: File
+      - name: config-volume
+        configMap:
+          name: fluent-bit-config
