@@ -90,7 +90,6 @@ const findVoteForDelete = `-- name: FindVoteForDelete :one
 SELECT vote.ver, vote.doc, vote.vord_num, vote.account FROM vote
     JOIN vord ON vord.doc = vote.doc AND vord.num = vote.vord_num
 WHERE vote.ver = $1 AND vote.account = $2
-FOR UPDATE OF vote
 FOR SHARE OF vord
 `
 

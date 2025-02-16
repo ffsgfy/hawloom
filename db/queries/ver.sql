@@ -8,7 +8,6 @@ SELECT ver.vord_num, ver.created_by, ver.doc AS doc_id
 FROM ver
     JOIN vord ON vord.doc = ver.doc AND vord.num = ver.vord_num
 WHERE ver.id = $1
-FOR UPDATE OF ver
 FOR SHARE OF vord;
 
 -- name: FindVerForVote :one
@@ -24,7 +23,6 @@ FROM ver
         ON doc_vote.doc = ver.doc AND doc_vote.vord_num = ver.vord_num AND doc_vote.account = $2
 WHERE ver.id = $1
 LIMIT 1
-FOR UPDATE OF ver
 FOR SHARE OF vord;
 
 -- name: FindVersForCommit :many
@@ -35,7 +33,7 @@ ORDER BY votes DESC
 LIMIT 2;
 
 -- name: UpdateVerVotes :exec
--- Assumes ver is locked
+-- Assumes vord is locked
 UPDATE ver
 SET votes = votes + sqlc.arg(delta)
 WHERE id = $1;

@@ -6,7 +6,6 @@ VALUES ($1, $2, $3, $4);
 SELECT vote.* FROM vote
     JOIN vord ON vord.doc = vote.doc AND vord.num = vote.vord_num
 WHERE vote.ver = $1 AND vote.account = $2
-FOR UPDATE OF vote
 FOR SHARE OF vord;
 
 -- name: CountVotes :many

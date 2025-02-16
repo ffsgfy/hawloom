@@ -66,7 +66,6 @@ SELECT ver.vord_num, ver.created_by, ver.doc AS doc_id
 FROM ver
     JOIN vord ON vord.doc = ver.doc AND vord.num = ver.vord_num
 WHERE ver.id = $1
-FOR UPDATE OF ver
 FOR SHARE OF vord
 `
 
@@ -96,7 +95,6 @@ FROM ver
         ON doc_vote.doc = ver.doc AND doc_vote.vord_num = ver.vord_num AND doc_vote.account = $2
 WHERE ver.id = $1
 LIMIT 1
-FOR UPDATE OF ver
 FOR SHARE OF vord
 `
 
@@ -160,7 +158,7 @@ SET votes = votes + $2
 WHERE id = $1
 `
 
-// Assumes ver is locked
+// Assumes vord is locked
 func (q *Queries) UpdateVerVotes(ctx context.Context, iD uuid.UUID, delta int32) error {
 	_, err := q.db.Exec(ctx, updateVerVotes, iD, delta)
 	return err
