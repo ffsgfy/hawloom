@@ -7,8 +7,8 @@
         "database": "${POSTGRES_USER}"
     },
     "http": {
-        "bind_address": "127.0.0.1",
-        "bind_port": "${HAWLOOM_PORT}"
+        "bind_address": "0.0.0.0",
+        "bind_port": 22440
     },
     "auth": {
         "key_size": 32,

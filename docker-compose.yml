@@ -7,15 +7,14 @@ x-hawloom-base: &hawloom-base
     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     POSTGRES_HOST: ${POSTGRES_HOST}
     POSTGRES_PORT: ${POSTGRES_PORT}
-    HAWLOOM_PORT: ${HAWLOOM_PORT}
   ports:
-    - "127.0.0.1:${HAWLOOM_PORT}:${HAWLOOM_PORT}"
+    - "0.0.0.0:22440:22440"
   volumes:
     - ./config/:/etc/hawloom/config/:ro
   networks:
     - hawloom-net
   healthcheck:
-    test: ["CMD", "curl", "-f", "http://localhost:${HAWLOOM_PORT}/healthcheck"]
+    test: ["CMD", "curl", "-f", "http://localhost:22440/healthcheck"]
     interval: 5s
     timeout: 5s
     retries: 3
@@ -44,7 +43,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       PGPORT: ${POSTGRES_PORT}
     ports:
-      - "127.0.0.1:${POSTGRES_PORT}:${POSTGRES_PORT}"
+      - "0.0.0.0:${POSTGRES_PORT}:${POSTGRES_PORT}"
     volumes:
       - db-data:/var/lib/postgresql/data
     networks:
