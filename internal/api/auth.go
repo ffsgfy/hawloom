@@ -95,9 +95,10 @@ func (sc *StateCtx) LoadAuthKeys(required bool) error {
 }
 
 type AuthToken struct {
-	AccountID int32
-	KeyID     int32
-	Expires   int64 // unix timestamp in seconds
+	AccountName string
+	AccountID   int32
+	KeyID       int32
+	Expires     int64 // unix timestamp in seconds
 }
 
 func (t *AuthToken) TTL() int64 {
@@ -126,11 +127,12 @@ func CheckHMAC(data, key, hm []byte) (bool, error) {
 	return hmac.Equal(dataHM, hm), nil
 }
 
-func CreateAuthToken(key *AuthKey, accountID int32, ttl int) *AuthToken {
+func CreateAuthToken(key *AuthKey, accountName string, accountID int32, ttl int) *AuthToken {
 	return &AuthToken{
-		AccountID: accountID,
-		KeyID:     key.ID,
-		Expires:   time.Now().Unix() + int64(ttl),
+		AccountName: accountName,
+		AccountID:   accountID,
+		KeyID:       key.ID,
+		Expires:     time.Now().Unix() + int64(ttl),
 	}
 }
 

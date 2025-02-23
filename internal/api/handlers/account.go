@@ -81,7 +81,7 @@ func HandleAccountLoginPost(s *api.State) echo.HandlerFunc {
 		}
 
 		key := sc.Auth.KeyInUse.Load()
-		token := api.CreateAuthToken(key, account.ID, sc.Config.Auth.TokenTTL.V)
+		token := api.CreateAuthToken(key, account.Name, account.ID, sc.Config.Auth.TokenTTL.V)
 		cookie, err := api.CreateAuthCookie(key, token, sc.Config.Auth.Cookie.V)
 		if err != nil {
 			return err
