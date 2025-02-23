@@ -16,6 +16,7 @@ func HandleNotFound(c echo.Context) error {
 func AddHandlers(e *echo.Echo, s *api.State) {
 	e.RouteNotFound("*", HandleNotFound)
 	e.GET("/healthcheck", HandleHealthcheck(s))
+	e.Static("/static", "static")
 
 	g := e.Group("/", middleware.SetupContext, middleware.WrapErrors, middleware.LogAccess)
 	g.GET("account", HandleAccountGet(s))
