@@ -74,11 +74,20 @@ services:
   sqlc:
     image: sqlc/sqlc:1.27.0
     command:
-      - "diff"
+      - "generate"
     volumes:
       - ./db/:/db/:ro
       - ./internal/db/:/internal/db/
       - ./sqlc.yaml/:/sqlc.yaml/:ro
+
+  templ:
+    image: ghcr.io/a-h/templ:v0.3.833
+    command:
+      - "generate"
+    volumes:
+      - ./internal/ui/:/app/
+    working_dir: /app
+    user: root
 
 volumes:
   db-data: {}
