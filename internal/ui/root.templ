@@ -1,0 +1,48 @@
+package ui
+
+import (
+	"bytes"
+    "context"
+
+    "github.com/ffsgfy/hawloom/internal/api"
+)
+
+func Render(ctx context.Context, component templ.Component) (string, error) {
+	buffer := bytes.Buffer{}
+	err := component.Render(ctx, &buffer)
+	return buffer.String(), err
+}
+
+templ PageHeader() {
+    {{ authToken, _ := api.GetValidAuthToken(ctx) }}
+
+    <div class="flex flex-row items-center w-full shadow-sm">
+        <a href="/" class="text-lg font-mono p-2">Hawloom</a>
+        <span class="flex-1"/>
+
+        if authToken == nil {
+            <a href="/auth/login" class="p-2">Login</a>
+            <a href="/auth/register" class="p-2">Register</a>
+        } else {
+            <a href="/user/{ authToken.AccountName }" class="p-2">{ authToken.AccountName }</a>
+            <a href="/auth/logout" class="p-2">Logout</a>
+        }
+    </div>
+}
+
+templ PageWrapper(title string, children ...templ.Component) {
+	<!DOCTYPE html>
+	<html lang="en">
+		<head>
+            <meta charset="UTF-8"/>
+            <meta name="viewport" content="width=device-width, initial-scale=1"/>
+            <link href="/static/style.css" rel="stylesheet"/>
+            <title>{ title }</title>
+		</head>
+		<body>
+			for _, child := range children {
+				@child
+			}
+		</body>
+	</html>
+}

@@ -19,8 +19,5 @@ func AddHandlers(e *echo.Echo, s *api.State) {
 	e.Static("/static", "static")
 
 	g := e.Group("/", middleware.SetupContext, middleware.WrapErrors, middleware.LogAccess)
-	g.GET("account", HandleAccountGet(s))
-	g.GET("account/chkauth", HandleAccountGet(s), middleware.ManageAuth(s)) // TODO: remove this
-	g.POST("account", HandleAccountPost(s))
-	g.POST("account/login", HandleAccountLoginPost(s))
+	g.GET("", HandleMain(s))
 }

@@ -7,4 +7,5 @@
 
 set -e
 cd "$(dirname "$0")/.."
+
 tailwindcss -i ./internal/ui/css/style.css -o ./static/style.css
