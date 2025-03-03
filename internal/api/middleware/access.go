@@ -32,12 +32,12 @@ func LogAccess(next echo.HandlerFunc) echo.HandlerFunc {
 		var err error
 
 		start := time.Now()
-		res := c.Response()
-		res.After(func() {
+		logfn := func() {
 			duration := time.Since(start)
 			durationMilli := float64(duration.Microseconds()) / 1000.0
 
 			req := c.Request()
+			res := c.Response()
 			ctx := req.Context()
 
 			// TODO: also log user ip
@@ -66,11 +66,13 @@ func LogAccess(next echo.HandlerFunc) echo.HandlerFunc {
 			}
 
 			ctxlog.Info(ctx, "HTTP "+req.Method, tags...)
-		})
+		}
 
 		err = next(c)
-		if res.Committed && err != nil {
-			ctxlog.Error2(c.Request().Context(), "post-response error", err)
+		if c.Response().Committed {
+			logfn()
+		} else {
+			c.Response().After(logfn)
 		}
 
 		return err

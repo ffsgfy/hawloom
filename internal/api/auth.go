@@ -6,10 +6,11 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
-	"encoding/binary"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -95,10 +96,10 @@ func (sc *StateCtx) LoadAuthKeys(required bool) error {
 }
 
 type AuthToken struct {
-	AccountName string
-	AccountID   int32
-	KeyID       int32
-	Expires     int64 // unix timestamp in seconds
+	AccountName string `json:"n"`
+	AccountID   int32  `json:"i"`
+	KeyID       int32  `json:"k"`
+	Expires     int64  `json:"e"` // unix timestamp in seconds
 }
 
 func (t *AuthToken) TTL() int64 {
@@ -137,36 +138,54 @@ func CreateAuthToken(key *AuthKey, accountName string, accountID int32, ttl int)
 }
 
 func EncodeAuthToken(key *AuthKey, token *AuthToken) (string, error) {
-	data, err := binary.Append(nil, binary.BigEndian, token)
+	tokenData, err := json.Marshal(token)
 	if err != nil {
 		return "", fmt.Errorf("failed to encode auth token: %w", err)
 	}
 
-	data, err = ComputeHMAC(data, key.Data, data)
+	hmacData, err := ComputeHMAC(tokenData, key.Data, nil)
 	if err != nil {
 		return "", err
 	}
 
-	return base64.RawURLEncoding.EncodeToString(data), nil
+	tokenPart := base64.RawURLEncoding.EncodeToString(tokenData)
+	hmacPart := base64.RawURLEncoding.EncodeToString(hmacData)
+	return fmt.Sprintf("%s.%s", tokenPart, hmacPart), nil
 }
 
 func DecodeAuthToken(str string) (*AuthToken, []byte, []byte, error) {
-	data, err := base64.RawURLEncoding.DecodeString(str)
+	splitAt := strings.IndexByte(str, '.')
+	if splitAt < 0 {
+		return nil, nil, nil, ErrMalformedToken.WithInternal(
+			errors.New("no part separator found"),
+		)
+	}
+
+	tokenPart := str[:splitAt]
+	hmacPart := str[splitAt+1:]
+
+	tokenData, err := base64.RawURLEncoding.DecodeString(tokenPart)
 	if err != nil {
 		return nil, nil, nil, ErrMalformedToken.WithInternal(
-			fmt.Errorf("failed to decode base64: %w", err),
+			fmt.Errorf("failed to decode token part: %w", err),
+		)
+	}
+
+	hmacData, err := base64.RawURLEncoding.DecodeString(hmacPart)
+	if err != nil {
+		return nil, nil, nil, ErrMalformedToken.WithInternal(
+			fmt.Errorf("failed to decode hmac part: %w", err),
 		)
 	}
 
 	token := AuthToken{}
-	size, err := binary.Decode(data, binary.BigEndian, &token)
-	if err != nil {
+	if err := json.Unmarshal(tokenData, &token); err != nil {
 		return nil, nil, nil, ErrMalformedToken.WithInternal(
 			fmt.Errorf("failed to decode auth token: %w", err),
 		)
 	}
 
-	return &token, data[:size], data[size:], nil
+	return &token, tokenData, hmacData, nil
 }
 
 func CreateAuthCookie(key *AuthKey, token *AuthToken, name string) (*http.Cookie, error) {
@@ -178,7 +197,8 @@ func CreateAuthCookie(key *AuthKey, token *AuthToken, name string) (*http.Cookie
 	return &http.Cookie{
 		Name:     name,
 		Value:    tokenStr,
-		MaxAge:   int(token.TTL()),
+		Path:     "/",
+		Expires:  time.Unix(token.Expires, 0),
 		SameSite: http.SameSiteStrictMode,
 	}, nil
 }

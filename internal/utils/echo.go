@@ -19,7 +19,7 @@ func RunEcho(ctx context.Context, e *echo.Echo, address string, port uint16) {
 	ctxlog.Info(ctx, "server starting", "port", port)
 
 	go func() {
-		if err := e.Start(fmt.Sprintf("%s:%d", address,  port)); err != nil && err != http.ErrServerClosed {
+		if err := e.Start(fmt.Sprintf("%s:%d", address, port)); err != nil && err != http.ErrServerClosed {
 			ctxlog.Error2(ctx, "fatal server error", err)
 			cancel()
 		}

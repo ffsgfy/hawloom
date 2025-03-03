@@ -130,7 +130,7 @@ func (sc *StateCtx) RunAutocommit() {
 		}
 
 		if errors.Is(err, sql.ErrNoRows) {
-			ctxlog.Debug(sc.Ctx, "autocommit: nothing to do")
+			// ctxlog.Debug(sc.Ctx, "autocommit: nothing to do")
 			select {
 			case <-sc.Ctx.Done():
 			case <-time.After(time.Second * time.Duration(sc.Config.Vord.AutocommitPeriod.V)):
