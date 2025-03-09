@@ -52,7 +52,7 @@ func (q *Queries) CreateVordZero(ctx context.Context, doc uuid.UUID) error {
 }
 
 const findVordForCommit = `-- name: FindVordForCommit :one
-SELECT vord.doc, vord.num, vord.flags, vord.start_at, vord.finish_at, doc.id, doc.title, doc.flags, doc.created_by, doc.created_at, doc.vord_duration FROM vord
+SELECT vord.doc, vord.num, vord.flags, vord.start_at, vord.finish_at, doc.id, doc.title, doc.description, doc.flags, doc.created_by, doc.created_at, doc.vord_duration FROM vord
     JOIN doc ON doc.id = vord.doc
 WHERE num = -1 AND finish_at <= CURRENT_TIMESTAMP
 ORDER BY finish_at
@@ -76,6 +76,7 @@ func (q *Queries) FindVordForCommit(ctx context.Context) (*FindVordForCommitRow,
 		&i.Vord.FinishAt,
 		&i.Doc.ID,
 		&i.Doc.Title,
+		&i.Doc.Description,
 		&i.Doc.Flags,
 		&i.Doc.CreatedBy,
 		&i.Doc.CreatedAt,
@@ -85,7 +86,7 @@ func (q *Queries) FindVordForCommit(ctx context.Context) (*FindVordForCommitRow,
 }
 
 const findVordForCommitByDocID = `-- name: FindVordForCommitByDocID :one
-SELECT vord.doc, vord.num, vord.flags, vord.start_at, vord.finish_at, doc.id, doc.title, doc.flags, doc.created_by, doc.created_at, doc.vord_duration FROM vord
+SELECT vord.doc, vord.num, vord.flags, vord.start_at, vord.finish_at, doc.id, doc.title, doc.description, doc.flags, doc.created_by, doc.created_at, doc.vord_duration FROM vord
     JOIN doc ON doc.id = vord.doc
 WHERE doc = $1 AND num = -1
 FOR UPDATE NOWAIT
@@ -107,6 +108,7 @@ func (q *Queries) FindVordForCommitByDocID(ctx context.Context, doc uuid.UUID) (
 		&i.Vord.FinishAt,
 		&i.Doc.ID,
 		&i.Doc.Title,
+		&i.Doc.Description,
 		&i.Doc.Flags,
 		&i.Doc.CreatedBy,
 		&i.Doc.CreatedAt,

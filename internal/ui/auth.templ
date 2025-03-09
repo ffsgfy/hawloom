@@ -1,18 +1,18 @@
 package ui
 
 templ authFormField(label, name, inputType string) {
-    <label for={ name } class="block mb-1">{ label }</label>
-    <input id={ name } name={ name } type={ inputType } class="h-8"/>
-    <div class="h-2"/>
+    @formLabel(label, name)
+    <input id={ name } name={ name } type={ inputType } class="w-full text-sm"/>
+    @formPad()
 }
 
 templ authForm() {
     <div class="flex flex-col h-screen">
-        <form hx-post="" hx-target="#auth-error" class="m-auto max-w-md">
+        <form hx-post="" hx-target="#form-error" class="m-auto min-w-3xs">
             { children... }
-            <div id="auth-error" class="text-sm text-red-800"/>
-            <div class="h-2"/>
-            <input type="submit" value="Submit" class="block ml-auto px-2 py-1 border border-gray-500 hover:cursor-pointer active:underline"/>
+            @formError()
+            @formPad()
+            @formSubmit()
         </form>
     </div>
 }

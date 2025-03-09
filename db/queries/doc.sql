@@ -1,6 +1,6 @@
 -- name: CreateDoc :one
-INSERT INTO doc (id, title, flags, created_by, vord_duration)
-VALUES ($1, $2, $3, $4, $5)
+INSERT INTO doc (id, title, description, flags, created_by, vord_duration)
+VALUES ($1, $2, $3, $4, $5, $6)
 RETURNING *;
 
 -- name: FindDoc :one

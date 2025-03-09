@@ -1,0 +1,53 @@
+package ui
+
+templ newDocPage() {
+    <div class="flex flex-col h-screen">
+        <form hx-post="" hx-target="#form-error" class="flex flex-row m-auto">
+            <div class="w-2xl">
+                @formLabel("Content", "content")
+                <textarea id="content" name="content" class="w-full h-124 p-3 resize-y font-mono text-sm break-all"/>
+            </div>
+            <span class="w-4"/>
+            <div class="w-md">
+                @formLabel("Title", "title")
+                <input type="text" id="title" name="title" class="w-full p-2"/>
+                @formPad()
+                @formLabel("Description", "description")
+                <textarea id="description" name="description" class="w-full h-30 p-3 resize-y font-mono text-sm break-all"/>
+                @formPad()
+                @formLabel("Settings", "")
+                @formPad()
+                <div class="grid grid-cols-[repeat(2,_max-content)] gap-x-4 gap-y-2 items-center pl-4 text-sm">
+                    @formLabel("Voting round duration:", "vduration")
+                    <span>
+                        <input type="number" id="vduration" name="vduration" class="w-18 p-1 mr-1 text-sm" value="120"/> seconds
+                    </span>
+                    @formLabel("Voting mode:", "vmode")
+                    <select id="vmode" name="vmode" class="p-1 text-sm">
+                        <option value="selection">Selection</option>
+                        <option value="approval">Approval</option>
+                    </select>
+                </div>
+                @formPad()
+                <div class="flex flex-row w-full items-center pl-4 text-sm">
+                    <input type="checkbox" id="public" name="public" value="true">
+                    <label for="public" class="ml-2">Public visibility</label>
+                </div>
+                @formPad()
+                <div class="flex flex-row w-full items-center pl-4 text-sm">
+                    <input type="checkbox" id="majority" name="majority" value="true">
+                    <label for="majority" class="ml-2">Majority requirement</label>
+                </div>
+                @formPad()
+                @formError()
+                @formPad()
+                @formSubmit()
+                <!-- TODO: tooltips -->
+            </div>
+        </form>
+    </div>
+}
+
+templ NewDocPage() {
+    @PageWrapper("Hawloom - New Document", PageHeader(), newDocPage())
+}

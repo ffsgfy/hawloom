@@ -4,6 +4,7 @@ BEGIN;
     CREATE TABLE doc (
         id UUID NOT NULL PRIMARY KEY,
         title TEXT NOT NULL,
+        description TEXT NOT NULL,
         flags INT NOT NULL,
         created_by INT NOT NULL REFERENCES account (id),
         created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,

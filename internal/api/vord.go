@@ -82,7 +82,7 @@ func (sc *StateCtx) findAndCommitVord() error {
 		if err != nil {
 			delay = time.Second * time.Duration(sc.Config.Vord.MinDuration.V)
 		} else if flags != 0 {
-			delay = time.Second * time.Duration(min(
+			delay = time.Second * time.Duration(max(
 				float64(row.Doc.VordDuration)*sc.Config.Vord.DurationExtension.V,
 				float64(sc.Config.Vord.MinDuration.V),
 			))
@@ -125,12 +125,10 @@ func (sc *StateCtx) RunAutocommit() {
 
 		err := sc.findAndCommitVord()
 		if err == nil {
-			ctxlog.Info(sc.Ctx, "autocommit: ok")
 			continue // on success, immediately try to commit another
 		}
 
 		if errors.Is(err, sql.ErrNoRows) {
-			// ctxlog.Debug(sc.Ctx, "autocommit: nothing to do")
 			select {
 			case <-sc.Ctx.Done():
 			case <-time.After(time.Second * time.Duration(sc.Config.Vord.AutocommitPeriod.V)):

@@ -20,6 +20,7 @@ type Account struct {
 type Doc struct {
 	ID           uuid.UUID `db:"id"`
 	Title        string    `db:"title"`
+	Description  string    `db:"description"`
 	Flags        int32     `db:"flags"`
 	CreatedBy    int32     `db:"created_by"`
 	CreatedAt    time.Time `db:"created_at"`

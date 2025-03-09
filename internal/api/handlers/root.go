@@ -9,11 +9,6 @@ import (
 	"github.com/ffsgfy/hawloom/internal/api/middleware"
 )
 
-const (
-	HXRedirect = "HX-Redirect"
-	HXRefresh  = "HX-Refresh"
-)
-
 func HandleNotFound(c echo.Context) error {
 	return c.NoContent(http.StatusNotFound)
 }
@@ -29,8 +24,12 @@ func AddHandlers(e *echo.Echo, s *api.State) {
 	authGroup.GET("/", HandleMain(s))
 
 	authGroup.GET("/auth/login", HandleLogin(s))
-	baseGroup.POST("/auth/login", HandleLoginPost(s))
+	baseGroup.POST("/auth/login", HandleLoginPost(s), handleFormError)
 	authGroup.GET("/auth/register", HandleRegister(s))
-	baseGroup.POST("/auth/register", HandleRegisterPost(s))
+	baseGroup.POST("/auth/register", HandleRegisterPost(s), handleFormError)
 	authGroup.GET("/auth/logout", HandleLogout(s))
+
+	authGroup.GET("/doc/new", HandleNewDoc(s))
+	authGroup.POST("/doc/new", HandleNewDocPost(s), handleFormError)
+	authGroup.GET("/doc/:id", HandleDoc(s))
 }

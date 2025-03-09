@@ -20,13 +20,16 @@ const (
 
 type CreateDocParams struct {
 	Title        string
-	Summary      string
+	Description  string
 	Content      string
 	Flags        DocFlags
 	VordDuration int32
 }
 
 func (sc *StateCtx) CreateDoc(params *CreateDocParams) (*db.Doc, *db.Ver, error) {
+	if len(params.Title) < sc.Config.Doc.TitleMinLength.V {
+		return nil, nil, ErrDocTitleTooShort
+	}
 	if len(params.Title) > sc.Config.Doc.TitleMaxLength.V {
 		return nil, nil, ErrDocTitleTooLong
 	}
@@ -34,7 +37,7 @@ func (sc *StateCtx) CreateDoc(params *CreateDocParams) (*db.Doc, *db.Ver, error)
 		return nil, nil, ErrRoundDurationTooSmall
 	}
 
-	// TODO: limit max summary/content size
+	// TODO: limit max description/content size
 
 	authToken, err := GetValidAuthToken(sc.Ctx)
 	if err != nil {
@@ -50,6 +53,7 @@ func (sc *StateCtx) CreateDoc(params *CreateDocParams) (*db.Doc, *db.Ver, error)
 		if doc, err = sc.Queries.CreateDoc(sc.Ctx, &db.CreateDocParams{
 			ID:           doc_id,
 			Title:        params.Title,
+			Description:  params.Description,
 			Flags:        int32(params.Flags),
 			CreatedBy:    authToken.AccountID,
 			VordDuration: params.VordDuration,
@@ -66,7 +70,7 @@ func (sc *StateCtx) CreateDoc(params *CreateDocParams) (*db.Doc, *db.Ver, error)
 			Doc:       doc_id,
 			VordNum:   0,
 			CreatedBy: authToken.AccountID,
-			Summary:   params.Summary,
+			Summary:   "",
 			Content:   params.Content,
 		}); err != nil {
 			return err

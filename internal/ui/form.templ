@@ -1,0 +1,17 @@
+package ui
+
+templ formPad() {
+    <div class="h-2"/>
+}
+
+templ formLabel(label, name string) {
+    <label for={ name } class="block mb-1">{ label }</label>
+}
+
+templ formError() {
+    <div id="form-error" class="text-right text-sm text-red-800"/>
+}
+
+templ formSubmit() {
+    <input type="submit" value="Submit" class="block ml-auto px-2 py-1 border border-gray-500 hover:cursor-pointer active:underline"/>
+}

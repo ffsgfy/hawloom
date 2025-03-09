@@ -22,6 +22,7 @@
         "password_max_length": 48
     },
     "doc": {
+        "title_min_length": 3,
         "title_max_length": 256
     },
     "vord": {

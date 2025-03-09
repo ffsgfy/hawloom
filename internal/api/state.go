@@ -55,6 +55,7 @@ func (sc *StateCtx) TxWith(options pgx.TxOptions, fn func(*StateCtx) error) erro
 
 	if err = fn(&StateCtx{
 		State: &State{
+			Config:  sc.Config,
 			Pool:    sc.Pool,
 			Queries: sc.Queries.WithTx(tx),
 			Auth:    sc.Auth,

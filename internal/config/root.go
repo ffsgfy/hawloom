@@ -42,6 +42,7 @@ type AccountConfig struct {
 }
 
 type DocConfig struct {
+	TitleMinLength Value[int] `json:"title_min_length"`
 	TitleMaxLength Value[int] `json:"title_max_length"`
 }
 

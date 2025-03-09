@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"errors"
 	"net/http"
 	"time"
 
@@ -12,18 +11,6 @@ import (
 	"github.com/ffsgfy/hawloom/internal/ui"
 )
 
-func handleAuthError(c echo.Context, err error) error {
-	var herr *echo.HTTPError
-	if errors.As(err, &herr) {
-		if herr.Code != http.StatusInternalServerError {
-			if msg, ok := herr.Message.(string); ok {
-				return c.HTML(http.StatusOK, "Error: "+msg)
-			}
-		}
-	}
-	return err
-}
-
 func handleAuthSuccess(c echo.Context, sc *api.StateCtx, account *db.Account) error {
 	key := sc.Auth.KeyInUse.Load()
 	token := api.CreateAuthToken(key, account.Name, account.ID, sc.Config.Auth.TokenTTL.V)
@@ -33,8 +20,7 @@ func handleAuthSuccess(c echo.Context, sc *api.StateCtx, account *db.Account) er
 	}
 
 	c.SetCookie(cookie)
-	c.Response().Header().Set(HXRedirect, "/")
-	return c.NoContent(http.StatusOK)
+	return handleRedirect(c, "/")
 }
 
 func HandleLogin(s *api.State) echo.HandlerFunc {
@@ -62,7 +48,7 @@ func HandleLoginPost(s *api.State) echo.HandlerFunc {
 		sc := s.Ctx(c.Request().Context())
 		account, err := sc.CheckPassword(params.Name, params.Password)
 		if err != nil {
-			return handleAuthError(c, err)
+			return err
 		}
 
 		return handleAuthSuccess(c, sc, account)
@@ -93,13 +79,13 @@ func HandleRegisterPost(s *api.State) echo.HandlerFunc {
 		}
 
 		if params.Password != params.PasswordRe {
-			return handleAuthError(c, echo.NewHTTPError(http.StatusBadRequest, "passwords do not match"))
+			return echo.NewHTTPError(http.StatusBadRequest, "passwords do not match")
 		}
 
 		sc := s.Ctx(c.Request().Context())
 		account, err := sc.CreateAccount(params.Name, params.Password)
 		if err != nil {
-			return handleAuthError(c, err)
+			return err
 		}
 
 		return handleAuthSuccess(c, sc, account)
@@ -113,7 +99,6 @@ func HandleLogout(s *api.State) echo.HandlerFunc {
 			Path:    "/",
 			Expires: time.Unix(0, 0),
 		})
-		c.Response().Header().Set(HXRefresh, "true")
-		return c.NoContent(http.StatusOK)
+		return handleRefresh(c)
 	}
 }
