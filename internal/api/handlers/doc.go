@@ -1,11 +1,15 @@
 package handlers
 
 import (
+	"database/sql"
+	"errors"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 
 	"github.com/ffsgfy/hawloom/internal/api"
+	"github.com/ffsgfy/hawloom/internal/db"
 	"github.com/ffsgfy/hawloom/internal/ui"
 )
 
@@ -67,9 +71,47 @@ func HandleNewDocPost(s *api.State) echo.HandlerFunc {
 	}
 }
 
+type docParams struct {
+	DocID   uuid.UUID  `param:"doc"`
+	VerID   *uuid.UUID `query:"ver"`
+	VordNum *int32     `param:"vord"`
+}
+
 func HandleDoc(s *api.State) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		content, err := ui.Render(c.Request().Context(), ui.MainPage())
+		var params docParams
+		if err := c.Bind(&params); err != nil {
+			return err
+		}
+
+		sc := s.Ctx(c.Request().Context())
+		var doc *db.Doc
+		var ver *db.Ver // current
+		var err error
+
+		if params.VordNum == nil {
+			if row, e := sc.Queries.FindCurrentVer(sc.Ctx, params.DocID); e == nil {
+				doc = &row.Doc
+				ver = &row.Ver
+			} else {
+				err = e
+			}
+		} else {
+			if row, e := sc.Queries.FindWinningVer(sc.Ctx, params.DocID, *params.VordNum-1); e == nil {
+				doc = &row.Doc
+				ver = &row.Ver
+			} else {
+				err = e
+			}
+		}
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return api.ErrDocNotFound
+			}
+			return err
+		}
+
+		content, err := ui.Render(c.Request().Context(), ui.DocPage(doc, ver, params.VerID))
 		if err != nil {
 			return err
 		}

@@ -1,0 +1,45 @@
+package ui
+
+import (
+    "fmt"
+
+	"github.com/ffsgfy/hawloom/internal/db"
+)
+
+templ VerFragment(ver *db.Ver, vote int) {
+    {{
+        summary := "—"
+        if ver.Summary != "" {
+            summary = ver.Summary
+        }
+    }}
+
+    @formPad()
+    <div class="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-sm pl-4 border-l border-l-gray-500">
+        <span>Version:</span>
+        <span>{ formatUUID(ver.ID, false) }</span>
+
+        <span>Summary:</span>
+        <div class="whitespace-pre-line break-word">{ summary }</div>
+
+        <span>Votes:</span>
+        <div class="flex flex-row">
+            { fmt.Sprintf("%d", ver.Votes) }
+            <span class="flex-1"/>
+            if vote >= 0 {
+                {{
+                    action := "vote"
+                    button := "Vote"
+                    if vote > 0 {
+                        action = "unvote"
+                        button = "Unvote"
+                    }
+                    url := templ.SafeURL(fmt.Sprintf("/%s/%v", action, ver.ID))
+                }}
+                <a href={ url } class="underline">{ button }</a>
+            }
+        </div>
+    </div>
+
+    @docViewContent("selected", ver.Content)
+}

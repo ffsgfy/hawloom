@@ -15,16 +15,16 @@ FOR SHARE;
 -- name: FindVordForCommitByDocID :one
 SELECT sqlc.embed(vord), sqlc.embed(doc) FROM vord
     JOIN doc ON doc.id = vord.doc
-WHERE doc = $1 AND num = -1
-FOR UPDATE NOWAIT;
+WHERE vord.doc = $1 AND vord.num = -1
+FOR UPDATE OF vord NOWAIT;
 
 -- name: FindVordForCommit :one
 SELECT sqlc.embed(vord), sqlc.embed(doc) FROM vord
     JOIN doc ON doc.id = vord.doc
-WHERE num = -1 AND finish_at <= CURRENT_TIMESTAMP
+WHERE vord.num = -1 AND vord.finish_at <= CURRENT_TIMESTAMP
 ORDER BY finish_at
 LIMIT 1
-FOR UPDATE SKIP LOCKED;
+FOR UPDATE OF vord SKIP LOCKED;
 
 -- name: UpdateVord :exec
 UPDATE vord

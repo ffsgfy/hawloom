@@ -58,6 +58,63 @@ func (q *Queries) DeleteVer(ctx context.Context, id uuid.UUID) error {
 	return err
 }
 
+const findCurrentVer = `-- name: FindCurrentVer :one
+SELECT ver.id, ver.doc, ver.vord_num, ver.votes, ver.created_by, ver.created_at, ver.summary, ver.content, doc.id, doc.title, doc.description, doc.flags, doc.created_by, doc.created_at, doc.vord_duration
+FROM ver
+    JOIN doc ON doc.id = ver.doc
+WHERE ver.doc = $1
+ORDER BY ver.vord_num DESC, ver.votes DESC
+LIMIT 1
+`
+
+type FindCurrentVerRow struct {
+	Ver Ver `db:"ver"`
+	Doc Doc `db:"doc"`
+}
+
+func (q *Queries) FindCurrentVer(ctx context.Context, doc uuid.UUID) (*FindCurrentVerRow, error) {
+	row := q.db.QueryRow(ctx, findCurrentVer, doc)
+	var i FindCurrentVerRow
+	err := row.Scan(
+		&i.Ver.ID,
+		&i.Ver.Doc,
+		&i.Ver.VordNum,
+		&i.Ver.Votes,
+		&i.Ver.CreatedBy,
+		&i.Ver.CreatedAt,
+		&i.Ver.Summary,
+		&i.Ver.Content,
+		&i.Doc.ID,
+		&i.Doc.Title,
+		&i.Doc.Description,
+		&i.Doc.Flags,
+		&i.Doc.CreatedBy,
+		&i.Doc.CreatedAt,
+		&i.Doc.VordDuration,
+	)
+	return &i, err
+}
+
+const findVer = `-- name: FindVer :one
+SELECT id, doc, vord_num, votes, created_by, created_at, summary, content FROM ver WHERE id = $1
+`
+
+func (q *Queries) FindVer(ctx context.Context, id uuid.UUID) (*Ver, error) {
+	row := q.db.QueryRow(ctx, findVer, id)
+	var i Ver
+	err := row.Scan(
+		&i.ID,
+		&i.Doc,
+		&i.VordNum,
+		&i.Votes,
+		&i.CreatedBy,
+		&i.CreatedAt,
+		&i.Summary,
+		&i.Content,
+	)
+	return &i, err
+}
+
 const findVerForDelete = `-- name: FindVerForDelete :one
 SELECT ver.vord_num, ver.created_by, ver.doc AS doc_id
 FROM ver
@@ -116,6 +173,75 @@ func (q *Queries) FindVerForVote(ctx context.Context, ver uuid.UUID, account int
 	return &i, err
 }
 
+const findVerList = `-- name: FindVerList :many
+SELECT ver.id, ver.votes, account.name AS author, ver.summary
+FROM ver
+    JOIN account ON account.id = ver.created_by
+WHERE ver.doc = $1 AND ver.vord_num = $2
+ORDER BY ver.votes DESC
+`
+
+type FindVerListRow struct {
+	ID      uuid.UUID `db:"id"`
+	Votes   int32     `db:"votes"`
+	Author  string    `db:"author"`
+	Summary string    `db:"summary"`
+}
+
+func (q *Queries) FindVerList(ctx context.Context, doc uuid.UUID, vordNum int32) ([]*FindVerListRow, error) {
+	rows, err := q.db.Query(ctx, findVerList, doc, vordNum)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*FindVerListRow
+	for rows.Next() {
+		var i FindVerListRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Votes,
+			&i.Author,
+			&i.Summary,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const findVerWithVote = `-- name: FindVerWithVote :one
+SELECT ver.id, ver.doc, ver.vord_num, ver.votes, ver.created_by, ver.created_at, ver.summary, ver.content, CAST(vote.account IS NOT NULL AS BOOLEAN) AS has_vote
+FROM ver
+    LEFT JOIN vote ON vote.ver = $1 AND vote.account = $2
+WHERE id = $1
+`
+
+type FindVerWithVoteRow struct {
+	Ver     Ver  `db:"ver"`
+	HasVote bool `db:"has_vote"`
+}
+
+func (q *Queries) FindVerWithVote(ctx context.Context, ver uuid.UUID, account int32) (*FindVerWithVoteRow, error) {
+	row := q.db.QueryRow(ctx, findVerWithVote, ver, account)
+	var i FindVerWithVoteRow
+	err := row.Scan(
+		&i.Ver.ID,
+		&i.Ver.Doc,
+		&i.Ver.VordNum,
+		&i.Ver.Votes,
+		&i.Ver.CreatedBy,
+		&i.Ver.CreatedAt,
+		&i.Ver.Summary,
+		&i.Ver.Content,
+		&i.HasVote,
+	)
+	return &i, err
+}
+
 const findVersForCommit = `-- name: FindVersForCommit :many
 SELECT id, votes FROM ver
 WHERE doc = $1 AND vord_num = -1
@@ -147,6 +273,43 @@ func (q *Queries) FindVersForCommit(ctx context.Context, doc uuid.UUID) ([]*Find
 		return nil, err
 	}
 	return items, nil
+}
+
+const findWinningVer = `-- name: FindWinningVer :one
+SELECT ver.id, ver.doc, ver.vord_num, ver.votes, ver.created_by, ver.created_at, ver.summary, ver.content, doc.id, doc.title, doc.description, doc.flags, doc.created_by, doc.created_at, doc.vord_duration
+FROM ver
+    JOIN doc ON doc.id = ver.doc
+WHERE ver.doc = $1 AND ver.vord_num = $2
+ORDER BY ver.votes DESC
+LIMIT 1
+`
+
+type FindWinningVerRow struct {
+	Ver Ver `db:"ver"`
+	Doc Doc `db:"doc"`
+}
+
+func (q *Queries) FindWinningVer(ctx context.Context, doc uuid.UUID, vordNum int32) (*FindWinningVerRow, error) {
+	row := q.db.QueryRow(ctx, findWinningVer, doc, vordNum)
+	var i FindWinningVerRow
+	err := row.Scan(
+		&i.Ver.ID,
+		&i.Ver.Doc,
+		&i.Ver.VordNum,
+		&i.Ver.Votes,
+		&i.Ver.CreatedBy,
+		&i.Ver.CreatedAt,
+		&i.Ver.Summary,
+		&i.Ver.Content,
+		&i.Doc.ID,
+		&i.Doc.Title,
+		&i.Doc.Description,
+		&i.Doc.Flags,
+		&i.Doc.CreatedBy,
+		&i.Doc.CreatedAt,
+		&i.Doc.VordDuration,
+	)
+	return &i, err
 }
 
 const updateVerVotes = `-- name: UpdateVerVotes :exec

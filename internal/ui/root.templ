@@ -42,11 +42,12 @@ templ PageWrapper(title string, children ...templ.Component) {
             <meta charset="UTF-8"/>
             <meta name="viewport" content="width=device-width, initial-scale=1"/>
             <link href="/static/style.css" rel="stylesheet"/>
-            <!-- TODO: serve this from /static -->
+            <!-- TODO: serve these from /static -->
             <script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.js" integrity="sha384-oeUn82QNXPuVkGCkcrInrS1twIxKhkZiFfr2TdiuObZ3n3yIeMiqcRzkIcguaof1" crossorigin="anonymous"></script>
+            <script src="https://cdn.jsdelivr.net/gh/jonTrent/PatienceDiff/PatienceDiff.js" crossorigin="anonymous"></script>
             <title>{ title }</title>
 		</head>
-		<body>
+		<body class="flex flex-col min-h-screen">
 			for _, child := range children {
 				@child
 			}

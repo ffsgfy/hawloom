@@ -1,23 +1,31 @@
 package ui
 
+import (
+    "fmt"
+
+	"github.com/google/uuid"
+
+	"github.com/ffsgfy/hawloom/internal/db"
+)
+
 templ newDocPage() {
-    <div class="flex flex-col h-screen">
-        <form hx-post="" hx-target="#form-error" class="flex flex-row m-auto">
-            <div class="w-2xl">
-                @formLabel("Content", "content")
-                <textarea id="content" name="content" class="w-full h-124 p-3 resize-y font-mono text-sm break-all"/>
-            </div>
-            <span class="w-4"/>
-            <div class="w-md">
-                @formLabel("Title", "title")
-                <input type="text" id="title" name="title" class="w-full p-2"/>
-                @formPad()
-                @formLabel("Description", "description")
-                <textarea id="description" name="description" class="w-full h-30 p-3 resize-y font-mono text-sm break-all"/>
-                @formPad()
-                @formLabel("Settings", "")
-                @formPad()
-                <div class="grid grid-cols-[repeat(2,_max-content)] gap-x-4 gap-y-2 items-center pl-4 text-sm">
+    <form hx-post="" hx-target="#form-error" class="flex flex-row m-auto">
+        <div class="w-2xl">
+            @formLabel("Content", "content")
+            <textarea id="content" name="content" class="w-full h-124 p-3 resize-y font-mono text-sm break-all"/>
+        </div>
+        <span class="w-4"/>
+        <div class="w-md">
+            @formLabel("Title", "title")
+            <input type="text" id="title" name="title" class="w-full p-2"/>
+            @formPad()
+            @formLabel("Description", "description")
+            <textarea id="description" name="description" class="w-full h-30 p-3 resize-y font-mono text-sm break-all"/>
+            @formPad()
+            @formLabel("Settings", "")
+            @formPad()
+            <div class="pl-4 border-l border-l-gray-500">
+                <div class="grid grid-cols-[repeat(2,_max-content)] gap-x-4 gap-y-2 items-center text-sm">
                     @formLabel("Voting round duration:", "vduration")
                     <span>
                         <input type="number" id="vduration" name="vduration" class="w-18 p-1 mr-1 text-sm" value="120"/> seconds
@@ -29,25 +37,231 @@ templ newDocPage() {
                     </select>
                 </div>
                 @formPad()
-                <div class="flex flex-row w-full items-center pl-4 text-sm">
+                <div class="flex flex-row w-full items-center text-sm">
                     <input type="checkbox" id="public" name="public" value="true">
                     <label for="public" class="ml-2">Public visibility</label>
                 </div>
                 @formPad()
-                <div class="flex flex-row w-full items-center pl-4 text-sm">
+                <div class="flex flex-row w-full items-center text-sm">
                     <input type="checkbox" id="majority" name="majority" value="true">
                     <label for="majority" class="ml-2">Majority requirement</label>
                 </div>
-                @formPad()
-                @formError()
-                @formPad()
-                @formSubmit()
-                <!-- TODO: tooltips -->
             </div>
-        </form>
-    </div>
+            @formPad()
+            @formError()
+            @formPad()
+            @formSubmit()
+            <!-- TODO: tooltips -->
+        </div>
+    </form>
 }
 
 templ NewDocPage() {
     @PageWrapper("Hawloom - New Document", PageHeader(), newDocPage())
+}
+
+type VerRow struct {
+	ID      uuid.UUID
+	Votes   string
+	Author  string
+	Summary string
+    HasVote bool
+}
+
+templ verInfo(ver *db.Ver) {
+    <div id="version" class="grid grid-cols-[max-content_1fr_max-content] mb-1 text-sm">
+        <span class="font-mono">{ formatUUID(ver.ID, false) }</span>
+        <span/>
+        <span>{ fmt.Sprintf("%d votes", ver.Votes) }</span>
+    </div>
+}
+
+templ docViewButton(view string, active, dummy bool) {
+    {{
+        class := "px-2 py-1 hover:cursor-pointer"
+        if active {
+            class += " underline"
+        } else if dummy {
+            class += " text-gray-500"
+        }
+    }}
+
+    if dummy {
+        <span class={ class }>{ view }</span>
+    } else {
+        <span id={ fmt.Sprintf("btn-%s", view) } class={ class } onclick={ templ.JSFuncCall("updateView", view) }>{ view }</span>
+    }
+}
+
+templ docViewButtons() {
+    <span id="btns-normal" class="hidden">
+        @docViewButton("current", true, false)
+        |
+        @docViewButton("selected", false, false)
+        |
+        @docViewButton("diff", false, false)
+    </span>
+    <span id="btns-dummy">
+        @docViewButton("current", true, true)
+        |
+        @docViewButton("selected", false, true)
+        |
+        @docViewButton("diff", false, true)
+    </span>
+}
+
+templ docViewContent(view string, content string) {
+    <div id={ "txt-" + view } class="h-124 overflow-y-scroll p-3 resize-y font-mono text-sm whitespace-pre-line break-all border border-gray-500" hx-swap-oob="true">
+        { content }
+    </div>
+}
+
+templ docViewContainer(view string, content string, active bool) {
+    <div id={ "cnt-" + view } if !active { class="hidden" }>
+        @docViewContent(view, content)
+    </div>
+}
+
+templ docVerID(verID *uuid.UUID) {
+    {{
+        value := ""
+        if verID != nil {
+            value = verID.String()
+        }
+    }}
+
+    <input type="text" id="ver-id" name="ver-id" class="hidden" value={ value }/>
+}
+
+templ docVerStub(verID *uuid.UUID) {
+    @docVerID(verID)
+    if verID != nil {
+        <div id="ver" class="hidden">
+            <div hx-get={ fmt.Sprintf("/ver/%v", *verID) } hx-trigger="load"/>
+        </div>
+    } else {
+        <div id="ver"/>
+    }
+}
+
+templ docScript() {
+    <script>
+        const views = ['current', 'selected', 'diff']
+
+        // TODO: better tokenization
+        function splitViewContent(content) {
+            let tokens = []
+            let lines = content.split('\n')
+            for (line of lines) {
+                for (token of line.split(/\s+/)) {
+                    if (token.length > 0) {
+                        tokens.push(token)
+                    }
+                }
+                tokens.push('\n')
+            }
+            return tokens
+        }
+
+        function updateDiffView() {
+            let txtCur = document.querySelector('#txt-current')
+            let txtSel = document.querySelector('#txt-selected')
+            let txtDiff = document.querySelector('#txt-diff')
+
+            let tokCur = splitViewContent(txtCur.innerHTML)
+            let tokSel = splitViewContent(txtSel.innerHTML)
+            let diff = patienceDiff(tokCur, tokSel)
+
+            txtDiff.textContent = ''
+            for (line of diff.lines) {
+                let tok = document.createElement('span')
+                if (line.aIndex < 0) {
+                    tok.classList.add('bg-green-100')
+                }
+                if (line.bIndex < 0) {
+                    tok.classList.add('bg-red-100')
+                }
+                tok.textContent = line.line
+                txtDiff.append(tok)
+                txtDiff.append(' ')
+            }
+        }
+
+        function updateView(selView) {
+            if (document.querySelector('#ver-id').value.length > 0) {
+                document.querySelector('#btns-normal').classList.remove('hidden')
+                document.querySelector('#btns-dummy').classList.add('hidden')
+            } else {
+                document.querySelector('#btns-normal').classList.add('hidden')
+                document.querySelector('#btns-dummy').classList.remove('hidden')
+            }
+
+            let curView = ''
+            let curHeight = 0
+            for (view of views) {
+                let cnt = document.querySelector('#cnt-' + view)
+                if (!cnt.classList.contains('hidden')) {
+                    curView = view
+                    curHeight = cnt.offsetHeight
+                    break
+                }
+            }
+
+            if (selView == 'alternate') {
+                if (curView == 'current') {
+                    selView = 'selected'
+                } else {
+                    selView = curView
+                }
+            }
+
+            if (selView == 'current') {
+                document.querySelector('#ver').classList.add('hidden')
+            } else {
+                document.querySelector('#ver').classList.remove('hidden')
+            }
+
+            if (selView == 'diff') {
+                updateDiffView()
+            }
+
+            for (view of views) {
+                document.querySelector('#cnt-' + view).classList.add('hidden')
+                document.querySelector('#btn-' + view).classList.remove('underline')
+            }
+
+            let cnt = document.querySelector('#cnt-' + selView)
+            cnt.classList.remove('hidden')
+            cnt.style['height'] = curHeight + 'px'
+            document.querySelector('#btn-' + selView).classList.add('underline')
+        }
+    </script>
+}
+
+templ docPage(doc *db.Doc, curVer *db.Ver, selVer *uuid.UUID) {
+    <div class="flex flex-row m-auto" hx-on:update-view-alternate="updateView('alternate')">
+        <div class="w-2xl">
+            <div class="mb-1">
+                View:
+                @docViewButtons()
+            </div>
+            @docViewContainer("current", curVer.Content, true)
+            @docViewContainer("selected", "", false)
+            @docViewContainer("diff", "", false)
+        </div>
+        <span class="w-4"/>
+        <div class="w-md">
+            <div class="mb-1">
+                { doc.Title }
+            </div>
+            <div id="description" class="max-h-30 overflow-y-scroll p-3 font-mono text-sm whitespace-pre-line break-all border border-gray-500">
+                { doc.Description }
+            </div>
+            @docVerStub(selVer)
+        </div>
+    </div>
+}
+
+templ DocPage(doc *db.Doc, curVer *db.Ver, selVer *uuid.UUID) {
+    @PageWrapper("Hawloom - " + formatUUID(doc.ID, true), PageHeader(), docScript(), docPage(doc, curVer, selVer))
 }

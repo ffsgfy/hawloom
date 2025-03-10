@@ -1,5 +1,11 @@
 package ui
 
+import (
+    "strings"
+
+	"github.com/google/uuid"
+)
+
 templ formPad() {
     <div class="h-2"/>
 }
@@ -14,4 +20,12 @@ templ formError() {
 
 templ formSubmit() {
     <input type="submit" value="Submit" class="block ml-auto px-2 py-1 border border-gray-500 hover:cursor-pointer active:underline"/>
+}
+
+func formatUUID(value uuid.UUID, shorten bool) string {
+    str := value.String()
+    if shorten {
+        str, _, _ = strings.Cut(str, "-")
+    }
+    return str
 }

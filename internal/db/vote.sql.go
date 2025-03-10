@@ -104,3 +104,34 @@ func (q *Queries) FindVoteForDelete(ctx context.Context, ver uuid.UUID, account 
 	)
 	return &i, err
 }
+
+const findVoteList = `-- name: FindVoteList :many
+SELECT ver FROM vote
+WHERE vote.doc = $1 AND vote.vord_num = $2 AND vote.account = $3
+`
+
+type FindVoteListParams struct {
+	Doc     uuid.UUID `db:"doc"`
+	VordNum int32     `db:"vord_num"`
+	Account int32     `db:"account"`
+}
+
+func (q *Queries) FindVoteList(ctx context.Context, arg *FindVoteListParams) ([]uuid.UUID, error) {
+	rows, err := q.db.Query(ctx, findVoteList, arg.Doc, arg.VordNum, arg.Account)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []uuid.UUID
+	for rows.Next() {
+		var ver uuid.UUID
+		if err := rows.Scan(&ver); err != nil {
+			return nil, err
+		}
+		items = append(items, ver)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

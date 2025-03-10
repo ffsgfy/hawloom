@@ -54,10 +54,10 @@ func (q *Queries) CreateVordZero(ctx context.Context, doc uuid.UUID) error {
 const findVordForCommit = `-- name: FindVordForCommit :one
 SELECT vord.doc, vord.num, vord.flags, vord.start_at, vord.finish_at, doc.id, doc.title, doc.description, doc.flags, doc.created_by, doc.created_at, doc.vord_duration FROM vord
     JOIN doc ON doc.id = vord.doc
-WHERE num = -1 AND finish_at <= CURRENT_TIMESTAMP
+WHERE vord.num = -1 AND vord.finish_at <= CURRENT_TIMESTAMP
 ORDER BY finish_at
 LIMIT 1
-FOR UPDATE SKIP LOCKED
+FOR UPDATE OF vord SKIP LOCKED
 `
 
 type FindVordForCommitRow struct {
@@ -88,8 +88,8 @@ func (q *Queries) FindVordForCommit(ctx context.Context) (*FindVordForCommitRow,
 const findVordForCommitByDocID = `-- name: FindVordForCommitByDocID :one
 SELECT vord.doc, vord.num, vord.flags, vord.start_at, vord.finish_at, doc.id, doc.title, doc.description, doc.flags, doc.created_by, doc.created_at, doc.vord_duration FROM vord
     JOIN doc ON doc.id = vord.doc
-WHERE doc = $1 AND num = -1
-FOR UPDATE NOWAIT
+WHERE vord.doc = $1 AND vord.num = -1
+FOR UPDATE OF vord NOWAIT
 `
 
 type FindVordForCommitByDocIDRow struct {

@@ -8,9 +8,10 @@ import (
 )
 
 const (
-	HXRedirect = "HX-Redirect"
-	HXRefresh  = "HX-Refresh"
-	HXRequest  = "HX-Request"
+	HXRedirect         = "HX-Redirect"
+	HXRefresh          = "HX-Refresh"
+	HXRequest          = "HX-Request"
+	HXTriggerAfterSwap = "HX-Trigger-After-Swap"
 )
 
 func isHTMX(c echo.Context) bool {

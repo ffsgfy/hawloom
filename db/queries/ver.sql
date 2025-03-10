@@ -3,6 +3,15 @@ INSERT INTO ver (id, doc, vord_num, created_by, summary, content)
 VALUES ($1, $2, $3, $4, $5, $6)
 RETURNING *;
 
+-- name: FindVer :one
+SELECT * FROM ver WHERE id = $1;
+
+-- name: FindVerWithVote :one
+SELECT sqlc.embed(ver), CAST(vote.account IS NOT NULL AS BOOLEAN) AS has_vote
+FROM ver
+    LEFT JOIN vote ON vote.ver = $1 AND vote.account = $2
+WHERE id = $1;
+
 -- name: FindVerForDelete :one
 SELECT ver.vord_num, ver.created_by, ver.doc AS doc_id
 FROM ver
@@ -31,6 +40,29 @@ SELECT id, votes FROM ver
 WHERE doc = $1 AND vord_num = -1
 ORDER BY votes DESC
 LIMIT 2;
+
+-- name: FindCurrentVer :one
+SELECT sqlc.embed(ver), sqlc.embed(doc)
+FROM ver
+    JOIN doc ON doc.id = ver.doc
+WHERE ver.doc = $1
+ORDER BY ver.vord_num DESC, ver.votes DESC
+LIMIT 1;
+
+-- name: FindWinningVer :one
+SELECT sqlc.embed(ver), sqlc.embed(doc)
+FROM ver
+    JOIN doc ON doc.id = ver.doc
+WHERE ver.doc = $1 AND ver.vord_num = $2
+ORDER BY ver.votes DESC
+LIMIT 1;
+
+-- name: FindVerList :many
+SELECT ver.id, ver.votes, account.name AS author, ver.summary
+FROM ver
+    JOIN account ON account.id = ver.created_by
+WHERE ver.doc = $1 AND ver.vord_num = $2
+ORDER BY ver.votes DESC;
 
 -- name: UpdateVerVotes :exec
 -- Assumes vord is locked

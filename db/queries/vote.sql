@@ -8,6 +8,10 @@ SELECT vote.* FROM vote
 WHERE vote.ver = $1 AND vote.account = $2
 FOR SHARE OF vord;
 
+-- name: FindVoteList :many
+SELECT ver FROM vote
+WHERE vote.doc = $1 AND vote.vord_num = $2 AND vote.account = $3;
+
 -- name: CountVotes :many
 SELECT ver, COUNT(*) AS votes FROM vote
 WHERE doc = $1 AND vote.vord_num = $2

@@ -7,14 +7,12 @@ templ authFormField(label, name, inputType string) {
 }
 
 templ authForm() {
-    <div class="flex flex-col h-screen">
-        <form hx-post="" hx-target="#form-error" class="m-auto min-w-3xs">
-            { children... }
-            @formError()
-            @formPad()
-            @formSubmit()
-        </form>
-    </div>
+    <form hx-post="" hx-target="#form-error" class="m-auto min-w-3xs">
+        { children... }
+        @formError()
+        @formPad()
+        @formSubmit()
+    </form>
 }
 
 templ loginPage() {
