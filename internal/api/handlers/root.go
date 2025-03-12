@@ -32,7 +32,6 @@ func AddHandlers(e *echo.Echo, s *api.State) {
 	authGroup.GET("/doc/new", HandleNewDoc(s))
 	authGroup.POST("/doc/new", HandleNewDocPost(s), handleFormError)
 	authGroup.GET("/doc/:doc", HandleDoc(s))
-	authGroup.GET("/doc/:doc/new", HandleDoc(s))
 	authGroup.GET("/doc/:doc/:vord", HandleDoc(s))
 	authGroup.GET("/ver/:ver", HandleVer(s))
 }

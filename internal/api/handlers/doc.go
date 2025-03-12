@@ -3,6 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -87,31 +88,36 @@ func HandleDoc(s *api.State) echo.HandlerFunc {
 		sc := s.Ctx(c.Request().Context())
 		var doc *db.Doc
 		var ver *db.Ver // current
-		var err error
+		var vord *db.Vord
 
 		if params.VordNum == nil {
-			if row, e := sc.Queries.FindCurrentVer(sc.Ctx, params.DocID); e == nil {
+			if row, err := sc.Queries.FindCurrentVer(sc.Ctx, params.DocID); err == nil {
 				doc = &row.Doc
 				ver = &row.Ver
+				vord = &row.Vord
+			} else if errors.Is(err, sql.ErrNoRows) {
+				return api.ErrDocNotFound
 			} else {
-				err = e
+				return err
 			}
 		} else {
-			if row, e := sc.Queries.FindWinningVer(sc.Ctx, params.DocID, *params.VordNum-1); e == nil {
+			*params.VordNum = max(*params.VordNum, 0)
+			if row, err := sc.Queries.FindWinningVer(sc.Ctx, &db.FindWinningVerParams{
+				Doc:         params.DocID,
+				VordNum:     max(*params.VordNum-1, 0),
+				VordNumJoin: *params.VordNum,
+			}); err == nil {
 				doc = &row.Doc
 				ver = &row.Ver
+				vord = &row.Vord
+			} else if errors.Is(err, sql.ErrNoRows) {
+				return handleRedirect(c, fmt.Sprintf("/doc/%v", params.DocID))
 			} else {
-				err = e
+				return err
 			}
-		}
-		if err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				return api.ErrDocNotFound
-			}
-			return err
 		}
 
-		content, err := ui.Render(c.Request().Context(), ui.DocPage(doc, ver, params.VerID))
+		content, err := ui.Render(c.Request().Context(), ui.DocPage(doc, ver, params.VerID, vord))
 		if err != nil {
 			return err
 		}

@@ -59,17 +59,19 @@ func (q *Queries) DeleteVer(ctx context.Context, id uuid.UUID) error {
 }
 
 const findCurrentVer = `-- name: FindCurrentVer :one
-SELECT ver.id, ver.doc, ver.vord_num, ver.votes, ver.created_by, ver.created_at, ver.summary, ver.content, doc.id, doc.title, doc.description, doc.flags, doc.created_by, doc.created_at, doc.vord_duration
+SELECT ver.id, ver.doc, ver.vord_num, ver.votes, ver.created_by, ver.created_at, ver.summary, ver.content, doc.id, doc.title, doc.description, doc.flags, doc.created_by, doc.created_at, doc.vord_duration, vord.doc, vord.num, vord.flags, vord.start_at, vord.finish_at
 FROM ver
     JOIN doc ON doc.id = ver.doc
+    JOIN vord ON vord.doc = ver.doc AND vord.num = -1
 WHERE ver.doc = $1
 ORDER BY ver.vord_num DESC, ver.votes DESC
 LIMIT 1
 `
 
 type FindCurrentVerRow struct {
-	Ver Ver `db:"ver"`
-	Doc Doc `db:"doc"`
+	Ver  Ver  `db:"ver"`
+	Doc  Doc  `db:"doc"`
+	Vord Vord `db:"vord"`
 }
 
 func (q *Queries) FindCurrentVer(ctx context.Context, doc uuid.UUID) (*FindCurrentVerRow, error) {
@@ -91,6 +93,11 @@ func (q *Queries) FindCurrentVer(ctx context.Context, doc uuid.UUID) (*FindCurre
 		&i.Doc.CreatedBy,
 		&i.Doc.CreatedAt,
 		&i.Doc.VordDuration,
+		&i.Vord.Doc,
+		&i.Vord.Num,
+		&i.Vord.Flags,
+		&i.Vord.StartAt,
+		&i.Vord.FinishAt,
 	)
 	return &i, err
 }
@@ -276,21 +283,29 @@ func (q *Queries) FindVersForCommit(ctx context.Context, doc uuid.UUID) ([]*Find
 }
 
 const findWinningVer = `-- name: FindWinningVer :one
-SELECT ver.id, ver.doc, ver.vord_num, ver.votes, ver.created_by, ver.created_at, ver.summary, ver.content, doc.id, doc.title, doc.description, doc.flags, doc.created_by, doc.created_at, doc.vord_duration
+SELECT ver.id, ver.doc, ver.vord_num, ver.votes, ver.created_by, ver.created_at, ver.summary, ver.content, doc.id, doc.title, doc.description, doc.flags, doc.created_by, doc.created_at, doc.vord_duration, vord.doc, vord.num, vord.flags, vord.start_at, vord.finish_at
 FROM ver
     JOIN doc ON doc.id = ver.doc
+    JOIN vord ON vord.doc = ver.doc AND vord.num = $3
 WHERE ver.doc = $1 AND ver.vord_num = $2
 ORDER BY ver.votes DESC
 LIMIT 1
 `
 
-type FindWinningVerRow struct {
-	Ver Ver `db:"ver"`
-	Doc Doc `db:"doc"`
+type FindWinningVerParams struct {
+	Doc         uuid.UUID `db:"doc"`
+	VordNum     int32     `db:"vord_num"`
+	VordNumJoin int32     `db:"vord_num_join"`
 }
 
-func (q *Queries) FindWinningVer(ctx context.Context, doc uuid.UUID, vordNum int32) (*FindWinningVerRow, error) {
-	row := q.db.QueryRow(ctx, findWinningVer, doc, vordNum)
+type FindWinningVerRow struct {
+	Ver  Ver  `db:"ver"`
+	Doc  Doc  `db:"doc"`
+	Vord Vord `db:"vord"`
+}
+
+func (q *Queries) FindWinningVer(ctx context.Context, arg *FindWinningVerParams) (*FindWinningVerRow, error) {
+	row := q.db.QueryRow(ctx, findWinningVer, arg.Doc, arg.VordNum, arg.VordNumJoin)
 	var i FindWinningVerRow
 	err := row.Scan(
 		&i.Ver.ID,
@@ -308,6 +323,11 @@ func (q *Queries) FindWinningVer(ctx context.Context, doc uuid.UUID, vordNum int
 		&i.Doc.CreatedBy,
 		&i.Doc.CreatedAt,
 		&i.Doc.VordDuration,
+		&i.Vord.Doc,
+		&i.Vord.Num,
+		&i.Vord.Flags,
+		&i.Vord.StartAt,
+		&i.Vord.FinishAt,
 	)
 	return &i, err
 }

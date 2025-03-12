@@ -42,17 +42,19 @@ ORDER BY votes DESC
 LIMIT 2;
 
 -- name: FindCurrentVer :one
-SELECT sqlc.embed(ver), sqlc.embed(doc)
+SELECT sqlc.embed(ver), sqlc.embed(doc), sqlc.embed(vord)
 FROM ver
     JOIN doc ON doc.id = ver.doc
+    JOIN vord ON vord.doc = ver.doc AND vord.num = -1
 WHERE ver.doc = $1
 ORDER BY ver.vord_num DESC, ver.votes DESC
 LIMIT 1;
 
 -- name: FindWinningVer :one
-SELECT sqlc.embed(ver), sqlc.embed(doc)
+SELECT sqlc.embed(ver), sqlc.embed(doc), sqlc.embed(vord)
 FROM ver
     JOIN doc ON doc.id = ver.doc
+    JOIN vord ON vord.doc = ver.doc AND vord.num = sqlc.arg(vord_num_join)
 WHERE ver.doc = $1 AND ver.vord_num = $2
 ORDER BY ver.votes DESC
 LIMIT 1;

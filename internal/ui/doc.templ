@@ -2,10 +2,13 @@ package ui
 
 import (
     "fmt"
+    "time"
 
-	"github.com/google/uuid"
+    "github.com/google/uuid"
 
-	"github.com/ffsgfy/hawloom/internal/db"
+    "github.com/ffsgfy/hawloom/internal/api"
+    "github.com/ffsgfy/hawloom/internal/db"
+    "github.com/ffsgfy/hawloom/internal/utils"
 )
 
 templ newDocPage() {
@@ -122,7 +125,11 @@ templ docViewContainer(view string, content string, active bool) {
     </div>
 }
 
-templ docVerID(verID *uuid.UUID) {
+templ docDocIDField(docID uuid.UUID) {
+    <input type="text" id="ver-id" name="ver-id" class="hidden" value={ fmt.Sprint(docID) }/>
+}
+
+templ docVerIDField(verID *uuid.UUID) {
     {{
         value := ""
         if verID != nil {
@@ -134,7 +141,7 @@ templ docVerID(verID *uuid.UUID) {
 }
 
 templ docVerStub(verID *uuid.UUID) {
-    @docVerID(verID)
+    @docVerIDField(verID)
     if verID != nil {
         <div id="ver" class="hidden">
             <div hx-get={ fmt.Sprintf("/ver/%v", *verID) } hx-trigger="load"/>
@@ -142,6 +149,77 @@ templ docVerStub(verID *uuid.UUID) {
     } else {
         <div id="ver"/>
     }
+}
+
+templ docVordNumField(vord *db.Vord) {
+    <input type="number" id="vord-num" name="vord-num" class="hidden" value={ fmt.Sprint(vord.Num) }/>
+}
+
+templ docVordNumArrow(docID uuid.UUID, vordNum int32, right bool) {
+    {{
+        arrow := "<"
+        if right {
+            arrow = ">"
+        }
+    }}
+
+    <a href={ templ.SafeURL(fmt.Sprintf("/doc/%v/%d", docID, vordNum)) } class="px-1 hover:cursor-pointer">{ arrow }</a>
+}
+
+templ docVordNum(vordNum int32) {
+    <span class="underline px-1">{ fmt.Sprint(vordNum) }</span>
+}
+
+func docVordExtensionReason(flags api.VordFlags) string {
+    if flags == 0 {
+        return ""
+    }
+
+    if utils.TestFlags(flags, api.VordFlagError) {
+        return "internal error"
+    } else if utils.TestFlags(flags, api.VordFlagTie) {
+        return "tie in votes"
+    } else if utils.TestFlags(flags, api.VordFlagNoMajority) {
+        return "no majority"
+    } else if utils.TestFlags(flags, api.VordFlagNoVotes) {
+        return "no votes"
+    }
+
+    return "unknown reason"
+}
+
+templ docVordNumDisplay(curVer *db.Ver, vord *db.Vord) {
+    <div class="flex flex-row items-center">
+        Round:
+        <span class="w-1"/>
+        if vord.Num < 0 {
+            @docVordNumArrow(curVer.Doc, curVer.VordNum, false)
+            @docVordNum(curVer.VordNum + 1)
+        } else {
+            if vord.Num > 0 {
+                @docVordNumArrow(curVer.Doc, vord.Num - 1, false)
+            }
+            @docVordNum(vord.Num)
+            @docVordNumArrow(curVer.Doc, vord.Num + 1, true)
+        }
+
+        <span class="flex-1"/>
+
+        {{ timer := max(int(vord.FinishAt.Sub(time.Now()).Seconds()), 0) }}
+        <span class="text-sm">
+            Time remaining: { fmt.Sprint(timer) }
+            if vord.Num < 0 {
+                if timer > 0 {
+                    if reason := docVordExtensionReason(api.VordFlags(vord.Flags)); reason != "" {
+                        (extended: { reason })
+                    }
+                } else {
+                    (awaiting commit)
+                }
+            }
+        </span>
+    </div>
+    @docVordNumField(vord)
 }
 
 templ docScript() {
@@ -238,7 +316,7 @@ templ docScript() {
     </script>
 }
 
-templ docPage(doc *db.Doc, curVer *db.Ver, selVer *uuid.UUID) {
+templ docPage(doc *db.Doc, curVer *db.Ver, selVer *uuid.UUID, vord *db.Vord) {
     <div class="flex flex-row m-auto" hx-on:update-view-alternate="updateView('alternate')">
         <div class="w-2xl">
             <div class="mb-1">
@@ -248,9 +326,13 @@ templ docPage(doc *db.Doc, curVer *db.Ver, selVer *uuid.UUID) {
             @docViewContainer("current", curVer.Content, true)
             @docViewContainer("selected", "", false)
             @docViewContainer("diff", "", false)
+
+            @formPad()
+            @docVordNumDisplay(curVer, vord)
         </div>
         <span class="w-4"/>
         <div class="w-md">
+            @docDocIDField(doc.ID)
             <div class="mb-1">
                 { doc.Title }
             </div>
@@ -262,6 +344,6 @@ templ docPage(doc *db.Doc, curVer *db.Ver, selVer *uuid.UUID) {
     </div>
 }
 
-templ DocPage(doc *db.Doc, curVer *db.Ver, selVer *uuid.UUID) {
-    @PageWrapper("Hawloom - " + formatUUID(doc.ID, true), PageHeader(), docScript(), docPage(doc, curVer, selVer))
+templ DocPage(doc *db.Doc, curVer *db.Ver, selVer *uuid.UUID, vord *db.Vord) {
+    @PageWrapper("Hawloom - " + formatUUID(doc.ID, true), PageHeader(), docScript(), docPage(doc, curVer, selVer, vord))
 }
