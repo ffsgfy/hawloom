@@ -63,22 +63,6 @@ templ NewDocPage() {
     @PageWrapper("Hawloom - New Document", PageHeader(), newDocPage())
 }
 
-type VerRow struct {
-	ID      uuid.UUID
-	Votes   string
-	Author  string
-	Summary string
-    HasVote bool
-}
-
-templ verInfo(ver *db.Ver) {
-    <div id="version" class="grid grid-cols-[max-content_1fr_max-content] mb-1 text-sm">
-        <span class="font-mono">{ formatUUID(ver.ID, false) }</span>
-        <span/>
-        <span>{ fmt.Sprintf("%d votes", ver.Votes) }</span>
-    </div>
-}
-
 templ docViewButton(view string, active, dummy bool) {
     {{
         class := "px-2 py-1 hover:cursor-pointer"
@@ -125,30 +109,8 @@ templ docViewContainer(view string, content string, active bool) {
     </div>
 }
 
-templ docDocIDField(docID uuid.UUID) {
-    <input type="text" id="ver-id" name="ver-id" class="hidden" value={ fmt.Sprint(docID) }/>
-}
-
-templ docVerIDField(verID *uuid.UUID) {
-    {{
-        value := ""
-        if verID != nil {
-            value = verID.String()
-        }
-    }}
-
-    <input type="text" id="ver-id" name="ver-id" class="hidden" value={ value }/>
-}
-
-templ docVerStub(verID *uuid.UUID) {
-    @docVerIDField(verID)
-    if verID != nil {
-        <div id="ver" class="hidden">
-            <div hx-get={ fmt.Sprintf("/ver/%v", *verID) } hx-trigger="load"/>
-        </div>
-    } else {
-        <div id="ver"/>
-    }
+templ docIDField(docID uuid.UUID) {
+    <input type="text" id="doc-id" name="doc-id" class="hidden" value={ docID.String() }/>
 }
 
 templ docVordNumField(vord *db.Vord) {
@@ -332,14 +294,16 @@ templ docPage(doc *db.Doc, curVer *db.Ver, selVer *uuid.UUID, vord *db.Vord) {
         </div>
         <span class="w-4"/>
         <div class="w-md">
-            @docDocIDField(doc.ID)
+            @docIDField(doc.ID)
             <div class="mb-1">
                 { doc.Title }
             </div>
             <div id="description" class="max-h-30 overflow-y-scroll p-3 font-mono text-sm whitespace-pre-line break-all border border-gray-500">
                 { doc.Description }
             </div>
-            @docVerStub(selVer)
+            @verIDField(selVer)
+            @verFragmentStub(selVer)
+            @verListStub()
         </div>
     </div>
 }

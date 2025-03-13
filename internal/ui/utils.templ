@@ -1,9 +1,10 @@
 package ui
 
 import (
+    "fmt"
     "strings"
 
-	"github.com/google/uuid"
+    "github.com/google/uuid"
 )
 
 templ formPad() {
@@ -28,4 +29,8 @@ func formatUUID(value uuid.UUID, shorten bool) string {
         str, _, _ = strings.Cut(str, "-")
     }
     return str
+}
+
+templ accountName(name, class string) {
+    <a href={ templ.SafeURL(fmt.Sprintf("/user/%s", name)) } class={ class }>{ name }</a>
 }

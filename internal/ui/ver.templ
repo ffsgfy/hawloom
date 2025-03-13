@@ -3,8 +3,29 @@ package ui
 import (
     "fmt"
 
-	"github.com/ffsgfy/hawloom/internal/db"
+    "github.com/google/uuid"
+
+    "github.com/ffsgfy/hawloom/internal/db"
 )
+
+templ verIDField(verID *uuid.UUID) {
+    {{
+        value := ""
+        if verID != nil {
+            value = verID.String()
+        }
+    }}
+
+    <input type="text" id="ver-id" name="ver-id" class="hidden" hx-swap-oob="true" value={ value }/>
+}
+
+templ verFragmentStub(verID *uuid.UUID) {
+    <div id="ver">
+        if verID != nil {
+            <div hx-get={ fmt.Sprintf("/ver/%v", *verID) } hx-target="#ver" hx-trigger="load"/>
+        }
+    </div>
+}
 
 templ VerFragment(ver *db.Ver, vote int) {
     {{
@@ -42,4 +63,59 @@ templ VerFragment(ver *db.Ver, vote int) {
     </div>
 
     @docViewContent("selected", ver.Content)
+    @verIDField(&ver.ID)
+}
+
+type VerRow struct {
+	ID      uuid.UUID
+	Author  string
+	Summary string
+	Votes   string
+    HasVote bool
+}
+
+templ verListRow(verRow *VerRow) {
+    <tr>
+        <td>
+            <span hx-get={ fmt.Sprintf("/ver/%v", verRow.ID) } hx-target="#ver" class="hover:cursor-pointer">
+                { formatUUID(verRow.ID, true) }
+            </span>
+        </td>
+        <td>
+            @accountName(verRow.Author, "")
+        </td>
+        <td>
+            { verRow.Summary }
+        </td>
+        <td if verRow.HasVote { class="underline" }>
+            { verRow.Votes }
+        </td>
+    </tr>
+}
+
+templ VerList(verRows []*VerRow) {
+    @formPad()
+    <table id="ver-list">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Author</th>
+                <th>Summary</th>
+                <th>Votes</th>
+            </tr>
+        </thead>
+        <tbody class="text-sm">
+            if len(verRows) > 0 {
+                for _, row := range verRows {
+                    @verListRow(row)
+                }
+            } else {
+                <td colspan="4">No data</td>
+            }
+        </tbody>
+    </table>
+}
+
+templ verListStub() {
+    <div hx-get="/ver/list" hx-include="body" hx-swap="outerHTML" hx-trigger="load"/>
 }

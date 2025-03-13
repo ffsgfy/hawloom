@@ -1,9 +1,8 @@
 package ui
 
 import (
-	"bytes"
+    "bytes"
     "context"
-    "fmt"
 
     "github.com/ffsgfy/hawloom/internal/api"
 )
@@ -26,7 +25,7 @@ templ PageHeader() {
             |
             <a href="/auth/register" class="px-2 py-1">Register</a>
         } else {
-            <a href={ templ.SafeURL(fmt.Sprintf("/user/%s", templ.URL(authToken.AccountName))) } class="underline px-2 py-1">{ authToken.AccountName }</a>
+            @accountName(authToken.AccountName, "underline px-2 py-1")
             |
             <a href="/doc/new" class="px-2 py-1">New document</a>
             |
