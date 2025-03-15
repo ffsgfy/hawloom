@@ -56,7 +56,6 @@ func LogAccess(next echo.HandlerFunc) echo.HandlerFunc {
 
 			authState := api.GetAuthState(ctx)
 			if authState != nil {
-				tags = append(tags, "auth", authState.Valid())
 				if authState.Token != nil {
 					tags = append(tags, "auth_token", authState.Token)
 				}

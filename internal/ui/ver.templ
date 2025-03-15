@@ -40,13 +40,6 @@ templ VerFragment(ver *db.Ver, author string, vote int) {
     @verSelIDField(&ver.ID)
 }
 
-func verSummary(summary string) string {
-    if summary == "" {
-        return "—"
-    }
-    return summary
-}
-
 templ verDetails(ver *db.Ver, author string, vote int) {
     <div class="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-sm pl-4 border-l border-l-gray-500">
         <span>Version:</span>
@@ -56,7 +49,7 @@ templ verDetails(ver *db.Ver, author string, vote int) {
         @accountName(author, "")
 
         <span>Summary:</span>
-        <div class="whitespace-pre-line break-word">{ verSummary(ver.Summary) }</div>
+        <div class="whitespace-pre-line break-word">{ maybeBlankText(ver.Summary) }</div>
 
         <span>Votes:</span>
         <div class="flex flex-row">
@@ -102,7 +95,7 @@ templ verListRow(verRow *VerRow) {
             @accountName(verRow.Author, "")
         </td>
         <td class="p-1 border-t border-t-gray-500">
-            { verSummary(verRow.Summary) }
+            { maybeBlankText(verRow.Summary) }
         </td>
         <td class="p-1 border-t border-t-gray-500">
             <span if verRow.HasVote { class="underline" }>
@@ -135,12 +128,14 @@ templ VerList(verRows []*VerRow) {
 }
 
 templ verListStub() {
-    <div id="ver-list" class="px-2"/>
+    <div id="ver-list" class="px-2">
+        @VerList(nil)
+    </div>
 }
 
 templ verListHead() {
     @formPad()
-    <span hx-get="/ver/list" hx-include="body" hx-target="#ver-list" hx-trigger="click, load" class="mb-1 hover:cursor-pointer">
+    <div hx-get="/ver/list" hx-include="body" hx-target="#ver-list" hx-trigger="click, load" class="mb-1 hover:cursor-pointer">
         Versions
-    </span>
+    </div>
 }

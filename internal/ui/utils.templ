@@ -35,6 +35,13 @@ templ accountName(name, class string) {
     <a href={ templ.SafeURL(fmt.Sprintf("/user/%s", name)) } class={ class }>{ name }</a>
 }
 
+func maybeBlankText(text string) string {
+    if text == "" {
+        return "—"
+    }
+    return text
+}
+
 templ utilsScript() {
     <script>
         function toggleClass(selector, cls) {

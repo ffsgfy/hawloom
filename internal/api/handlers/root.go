@@ -22,6 +22,7 @@ func AddHandlers(e *echo.Echo, s *api.State) {
 	authGroup := baseGroup.Group("", middleware.ManageAuth(s))
 
 	authGroup.GET("/", HandleMain(s))
+	authGroup.GET("/user/:name", HandleUser(s))
 
 	authGroup.GET("/auth/login", HandleLogin(s))
 	baseGroup.POST("/auth/login", HandleLoginPost(s), handleFormError)

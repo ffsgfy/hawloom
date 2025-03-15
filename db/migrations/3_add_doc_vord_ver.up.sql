@@ -34,7 +34,10 @@ BEGIN;
         FOREIGN KEY (doc, vord_num) REFERENCES vord (doc, num) ON UPDATE CASCADE
     );
 
-    CREATE INDEX ON doc (created_by);
+    CREATE INDEX ON doc (created_by, created_at);
+
+    CREATE INDEX ON doc (created_at)
+    WHERE doc.flags & 1 = 1; -- DocFlagPublic
 
     CREATE INDEX ON vord (finish_at)
     WHERE num = -1;

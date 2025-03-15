@@ -393,3 +393,64 @@ templ docPage(doc *db.Doc, docAuthor string, curVer *db.Ver, curVerAuthor string
 templ DocPage(doc *db.Doc, docAuthor string, curVer *db.Ver, curVerAuthor string, selVer *uuid.UUID, vord *db.Vord) {
     @PageWrapper("Hawloom - " + formatUUID(doc.ID, true), PageHeader(), utilsScript(), docScript(), docPage(doc, docAuthor, curVer, curVerAuthor, selVer, vord))
 }
+
+type DocRow struct {
+	ID          uuid.UUID
+	Title       string
+	Description string
+	Author      string
+}
+
+templ docListRow(docRow *DocRow, withAuthor bool) {
+    <tr class="align-top">
+        <td class="p-1 border-t border-t-gray-500">
+            <a href={ templ.SafeURL(fmt.Sprintf("/doc/%v", docRow.ID)) }>
+                { formatUUID(docRow.ID, true) }
+            </a>
+        </td>
+        <td class="p-1 border-t border-t-gray-500">
+            { docRow.Title }
+        </td>
+        <td class="p-1 border-t border-t-gray-500">
+            { maybeBlankText(docRow.Description) }
+        </td>
+        if withAuthor {
+            <td class="p-1 border-t border-t-gray-500">
+                @accountName(docRow.Author, "")
+            </td>
+        }
+    </tr>
+}
+
+templ docList(head string, docRows []*DocRow, withAuthor bool) {
+    <div class="text-lg mb-1">
+        { head }
+    </div>
+    <table class="w-full table-auto">
+        <thead>
+            <tr class="italic">
+                <td class="py-1 pr-2">ID</td>
+                <td class="py-1 pr-2">Title</td>
+                <td class="py-1 pr-2">Description</td>
+                if withAuthor {
+                    <td class="py-1">Author</td>
+                }
+            </tr>
+        </thead>
+        <tbody class="">
+            if len(docRows) > 0 {
+                for _, row := range docRows {
+                    @docListRow(row, withAuthor)
+                }
+            } else {
+                {{
+                    colspan := "3"
+                    if withAuthor {
+                        colspan = "4"
+                    }
+                }}
+                <td colspan={ colspan } class="p-1 text-center border-t border-t-gray-500">No data</td>
+            }
+        </tbody>
+    </table>
+}

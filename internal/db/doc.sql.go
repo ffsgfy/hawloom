@@ -7,6 +7,7 @@ package db
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -57,6 +58,54 @@ func (q *Queries) DeleteDoc(ctx context.Context, id uuid.UUID) error {
 	return err
 }
 
+const findAllPublicDocList = `-- name: FindAllPublicDocList :many
+SELECT doc.id, doc.title, doc.description, doc.flags, doc.created_by, doc.created_at, doc.vord_duration, account.name AS author
+FROM doc
+    JOIN account ON account.id = doc.created_by
+WHERE doc.flags & 1 = 1 -- DocFlagPublic
+ORDER BY doc.created_at DESC
+`
+
+type FindAllPublicDocListRow struct {
+	ID           uuid.UUID `db:"id"`
+	Title        string    `db:"title"`
+	Description  string    `db:"description"`
+	Flags        int32     `db:"flags"`
+	CreatedBy    int32     `db:"created_by"`
+	CreatedAt    time.Time `db:"created_at"`
+	VordDuration int32     `db:"vord_duration"`
+	Author       string    `db:"author"`
+}
+
+func (q *Queries) FindAllPublicDocList(ctx context.Context) ([]*FindAllPublicDocListRow, error) {
+	rows, err := q.db.Query(ctx, findAllPublicDocList)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*FindAllPublicDocListRow
+	for rows.Next() {
+		var i FindAllPublicDocListRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Title,
+			&i.Description,
+			&i.Flags,
+			&i.CreatedBy,
+			&i.CreatedAt,
+			&i.VordDuration,
+			&i.Author,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const findDoc = `-- name: FindDoc :one
 SELECT id, title, description, flags, created_by, created_at, vord_duration FROM doc WHERE id = $1
 `
@@ -74,4 +123,73 @@ func (q *Queries) FindDoc(ctx context.Context, id uuid.UUID) (*Doc, error) {
 		&i.VordDuration,
 	)
 	return &i, err
+}
+
+const findDocList = `-- name: FindDocList :many
+SELECT id, title, description, flags, created_by, created_at, vord_duration FROM doc
+WHERE created_by = $1
+ORDER BY created_at DESC
+`
+
+func (q *Queries) FindDocList(ctx context.Context, createdBy int32) ([]*Doc, error) {
+	rows, err := q.db.Query(ctx, findDocList, createdBy)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*Doc
+	for rows.Next() {
+		var i Doc
+		if err := rows.Scan(
+			&i.ID,
+			&i.Title,
+			&i.Description,
+			&i.Flags,
+			&i.CreatedBy,
+			&i.CreatedAt,
+			&i.VordDuration,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const findPublicDocList = `-- name: FindPublicDocList :many
+SELECT id, title, description, flags, created_by, created_at, vord_duration FROM doc
+WHERE created_by = $1
+    AND doc.flags & 1 = 1 -- DocFlagPublic
+ORDER BY created_at DESC
+`
+
+func (q *Queries) FindPublicDocList(ctx context.Context, createdBy int32) ([]*Doc, error) {
+	rows, err := q.db.Query(ctx, findPublicDocList, createdBy)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []*Doc
+	for rows.Next() {
+		var i Doc
+		if err := rows.Scan(
+			&i.ID,
+			&i.Title,
+			&i.Description,
+			&i.Flags,
+			&i.CreatedBy,
+			&i.CreatedAt,
+			&i.VordDuration,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

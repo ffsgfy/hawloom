@@ -1,5 +1,11 @@
 package ui
 
-templ MainPage() {
-    @PageWrapper("Hawloom - Main", PageHeader(), templ.Raw("Main page content"))
+templ mainPage(docRows []*DocRow) {
+    <div class="min-w-1/2 max-w-7/8 m-auto">
+        @docList("All public documents", docRows, true)
+    </div>
+}
+
+templ MainPage(docRows []*DocRow) {
+    @PageWrapper("Hawloom - Main", PageHeader(), mainPage(docRows))
 }
