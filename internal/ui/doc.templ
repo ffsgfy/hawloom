@@ -275,15 +275,26 @@ templ docScript() {
             cnt.style['height'] = curHeight + 'px'
             document.querySelector('#btn-' + selView).classList.add('underline')
         }
+
+        document.addEventListener('htmx:afterRequest', function(ev) {
+            if (ev.detail.target.id == 'ver') {
+                updateView('alternate')
+            }
+        })
     </script>
 }
 
 templ docPage(doc *db.Doc, curVer *db.Ver, selVer *uuid.UUID, vord *db.Vord) {
-    <div class="flex flex-row m-auto" hx-on:update-view-alternate="updateView('alternate')">
+    <div class="flex flex-row m-auto">
         <div class="w-2xl">
-            <div class="mb-1">
+            <div class="flex flex-row items-center mb-1">
                 View:
                 @docViewButtons()
+                <span class="flex-1"/>
+                if authToken, _ := api.GetValidAuthToken(ctx); authToken != nil {
+                    <a href={ templ.SafeURL(fmt.Sprintf("/ver/new?doc=%v", doc.ID)) }
+                        class="text-sm underline">New version</a>
+                }
             </div>
             @docViewContainer("current", curVer.Content, true)
             @docViewContainer("selected", "", false)
@@ -303,6 +314,7 @@ templ docPage(doc *db.Doc, curVer *db.Ver, selVer *uuid.UUID, vord *db.Vord) {
             </div>
             @verIDField(selVer)
             @verFragmentStub(selVer)
+            @verListHead()
             @verListStub()
         </div>
     </div>

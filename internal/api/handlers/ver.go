@@ -55,7 +55,6 @@ func HandleVer(s *api.State) echo.HandlerFunc {
 		if err != nil {
 			return err
 		}
-		c.Response().Header().Set(HXTriggerAfterSwap, "update-view-alternate")
 		return c.HTML(http.StatusOK, content)
 	}
 }

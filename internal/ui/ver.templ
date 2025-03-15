@@ -75,47 +75,57 @@ type VerRow struct {
 }
 
 templ verListRow(verRow *VerRow) {
-    <tr>
-        <td>
-            <span hx-get={ fmt.Sprintf("/ver/%v", verRow.ID) } hx-target="#ver" class="hover:cursor-pointer">
+    <tr class="align-top">
+        <td class="p-1 border-t border-t-gray-500">
+            <span hx-get={ fmt.Sprintf("/ver/%v", verRow.ID) } hx-target="#ver" hx-replace-url={ fmt.Sprintf("?ver=%v", verRow.ID) } class="hover:cursor-pointer">
                 { formatUUID(verRow.ID, true) }
             </span>
         </td>
-        <td>
+        <td class="p-1 border-t border-t-gray-500">
             @accountName(verRow.Author, "")
         </td>
-        <td>
+        <td class="p-1 border-t border-t-gray-500">
             { verRow.Summary }
         </td>
-        <td if verRow.HasVote { class="underline" }>
-            { verRow.Votes }
+        <td class="p-1 border-t border-t-gray-500">
+            <span if verRow.HasVote { class="underline" }>
+                { verRow.Votes }
+            </span>
         </td>
     </tr>
 }
 
 templ VerList(verRows []*VerRow) {
-    @formPad()
-    <table id="ver-list">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Author</th>
-                <th>Summary</th>
-                <th>Votes</th>
-            </tr>
-        </thead>
-        <tbody class="text-sm">
-            if len(verRows) > 0 {
-                for _, row := range verRows {
-                    @verListRow(row)
+    <div class="px-2">
+        <table id="ver-list" class="w-full table-auto">
+            <thead>
+                <tr class="text-center text-sm font-semibold">
+                    <td class="py-1">ID</td>
+                    <td class="py-1">Author</td>
+                    <td class="py-1">Summary</td>
+                    <td class="py-1">Votes</td>
+                </tr>
+            </thead>
+            <tbody class="text-sm">
+                if len(verRows) > 0 {
+                    for _, row := range verRows {
+                        @verListRow(row)
+                    }
+                } else {
+                    <td colspan="4" class="p-1 text-center border-t border-t-gray-500">No data</td>
                 }
-            } else {
-                <td colspan="4">No data</td>
-            }
-        </tbody>
-    </table>
+            </tbody>
+        </table>
+    </div>
 }
 
 templ verListStub() {
     <div hx-get="/ver/list" hx-include="body" hx-swap="outerHTML" hx-trigger="load"/>
+}
+
+templ verListHead() {
+    @formPad()
+    <div class="mb-1">
+        Versions
+    </div>
 }
