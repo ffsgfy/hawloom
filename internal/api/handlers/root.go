@@ -35,4 +35,6 @@ func AddHandlers(e *echo.Echo, s *api.State) {
 	authGroup.GET("/doc/:doc/:vord", HandleDoc(s))
 	authGroup.GET("/ver/list", HandleVerList(s))
 	authGroup.GET("/ver/:ver", HandleVer(s))
+	authGroup.POST("/ver/:ver/vote", HandleVerVoteUnvote(s, true))
+	authGroup.POST("/ver/:ver/unvote", HandleVerVoteUnvote(s, false))
 }

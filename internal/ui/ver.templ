@@ -19,12 +19,19 @@ templ verIDField(verID *uuid.UUID) {
     <input type="text" id="ver-id" name="ver-id" class="hidden" hx-swap-oob="true" value={ value }/>
 }
 
-templ verFragmentStub(verID *uuid.UUID) {
-    <div id="ver">
-        if verID != nil {
-            <div hx-get={ fmt.Sprintf("/ver/%v", *verID) } hx-target="#ver" hx-trigger="load"/>
+templ VerVoteUnvoteButton(verID uuid.UUID, hasVote bool) {
+    {{
+        var url, buttonText string
+        if hasVote {
+            url = fmt.Sprintf("/ver/%v/unvote", verID)
+            buttonText = "Unvote"
+        } else {
+            url = fmt.Sprintf("/ver/%v/vote", verID)
+            buttonText = "Vote"
         }
-    </div>
+    }}
+
+    <span hx-post={ url } class="underline hover:cursor-pointer">{ buttonText }</span>
 }
 
 templ VerFragment(ver *db.Ver, vote int) {
@@ -47,23 +54,22 @@ templ VerFragment(ver *db.Ver, vote int) {
         <div class="flex flex-row">
             { fmt.Sprintf("%d", ver.Votes) }
             <span class="flex-1"/>
-            if vote >= 0 {
-                {{
-                    action := "vote"
-                    button := "Vote"
-                    if vote > 0 {
-                        action = "unvote"
-                        button = "Unvote"
-                    }
-                    url := templ.SafeURL(fmt.Sprintf("/%s/%v", action, ver.ID))
-                }}
-                <a href={ url } class="underline">{ button }</a>
+            if ver.VordNum < 0 && vote >= 0 {
+                @VerVoteUnvoteButton(ver.ID, vote > 0)
             }
         </div>
     </div>
 
     @docViewContent("selected", ver.Content)
     @verIDField(&ver.ID)
+}
+
+templ verFragmentStub(verID *uuid.UUID) {
+    <div id="ver">
+        if verID != nil {
+            <div hx-get={ fmt.Sprintf("/ver/%v", *verID) } hx-target="#ver" hx-trigger="load"/>
+        }
+    </div>
 }
 
 type VerRow struct {
@@ -96,36 +102,34 @@ templ verListRow(verRow *VerRow) {
 }
 
 templ VerList(verRows []*VerRow) {
-    <div class="px-2">
-        <table id="ver-list" class="w-full table-auto">
-            <thead>
-                <tr class="text-center text-sm font-semibold">
-                    <td class="py-1">ID</td>
-                    <td class="py-1">Author</td>
-                    <td class="py-1">Summary</td>
-                    <td class="py-1">Votes</td>
-                </tr>
-            </thead>
-            <tbody class="text-sm">
-                if len(verRows) > 0 {
-                    for _, row := range verRows {
-                        @verListRow(row)
-                    }
-                } else {
-                    <td colspan="4" class="p-1 text-center border-t border-t-gray-500">No data</td>
+    <table class="w-full table-auto">
+        <thead>
+            <tr class="text-center text-sm font-semibold">
+                <td class="py-1">ID</td>
+                <td class="py-1">Author</td>
+                <td class="py-1">Summary</td>
+                <td class="py-1">Votes</td>
+            </tr>
+        </thead>
+        <tbody class="text-sm">
+            if len(verRows) > 0 {
+                for _, row := range verRows {
+                    @verListRow(row)
                 }
-            </tbody>
-        </table>
-    </div>
+            } else {
+                <td colspan="4" class="p-1 text-center border-t border-t-gray-500">No data</td>
+            }
+        </tbody>
+    </table>
 }
 
 templ verListStub() {
-    <div hx-get="/ver/list" hx-include="body" hx-swap="outerHTML" hx-trigger="load"/>
+    <div id="ver-list" class="px-2"/>
 }
 
 templ verListHead() {
     @formPad()
-    <div class="mb-1">
+    <span hx-get="/ver/list" hx-include="body" hx-target="#ver-list" hx-trigger="click, load" class="mb-1 hover:cursor-pointer">
         Versions
-    </div>
+    </span>
 }

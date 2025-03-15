@@ -59,6 +59,33 @@ func HandleVer(s *api.State) echo.HandlerFunc {
 	}
 }
 
+func HandleVerVoteUnvote(s *api.State, vote bool) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		var params verParams
+		if err := c.Bind(&params); err != nil {
+			return err
+		}
+
+		sc := s.Ctx(c.Request().Context())
+		var err error
+
+		if vote {
+			err = sc.CreateVote(params.VerID)
+		} else {
+			err = sc.DeleteVote(params.VerID)
+		}
+		if err != nil {
+			return err
+		}
+
+		content, err := ui.Render(sc.Ctx, ui.VerVoteUnvoteButton(params.VerID, vote))
+		if err != nil {
+			return err
+		}
+		return c.HTML(http.StatusOK, content)
+	}
+}
+
 func prepareVerRows(vers []*db.FindVerListRow, votes []uuid.UUID) []*ui.VerRow {
 	voteMap := map[uuid.UUID]bool{}
 	for _, vote := range votes {
