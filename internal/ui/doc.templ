@@ -2,6 +2,7 @@ package ui
 
 import (
     "fmt"
+    "strings"
     "time"
 
     "github.com/google/uuid"
@@ -106,6 +107,56 @@ templ docViewContent(view string, content string) {
 templ docViewContainer(view string, content string, active bool) {
     <div id={ "cnt-" + view } if !active { class="hidden" }>
         @docViewContent(view, content)
+    </div>
+}
+
+templ docDetailsButton(subj string) {
+    <span id={ fmt.Sprintf("dbt-%s", subj) } class="px-2 py-1 hover:cursor-pointer" onclick={ templ.JSFuncCall("toggleDetails", subj) }>{ subj }</span>
+}
+
+templ docDetailsButtons() {
+    @docDetailsButton("document")
+    |
+    @docDetailsButton("version")
+}
+
+func docVotingMode(doc *db.Doc) string {
+    if utils.TestFlags(doc.Flags, api.DocFlagApproval) {
+        return "approval"
+    }
+    return "selection"
+}
+
+func docFlags(doc *db.Doc) string {
+    var items []string
+    if utils.TestFlags(doc.Flags, api.DocFlagPublic) {
+        items = append(items, "public")
+    }
+    if utils.TestFlags(doc.Flags, api.DocFlagMajority) {
+        items = append(items, "majority")
+    }
+    return strings.Join(items, ", ")
+}
+
+templ docDetailsContainer(doc *db.Doc, docAuthor string) {
+    <div id="doc" class="hidden">
+        @formPad()
+        <div class="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-sm pl-4 border-l border-l-gray-500">
+            <span>Document:</span>
+            <span>{ formatUUID(doc.ID, false) }</span>
+
+            <span>Author:</span>
+            @accountName(docAuthor, "")
+
+            <span>Voting round duration:</span>
+            <span>{ fmt.Sprintf("%d seconds", doc.VordDuration) }</span>
+
+            <span>Voting mode:</span>
+            <span>{ docVotingMode(doc) }</span>
+
+            <span>Flags:</span>
+            <span>{ docFlags(doc) }</span>
+        </div>
     </div>
 }
 
@@ -228,7 +279,7 @@ templ docScript() {
         }
 
         function updateView(selView) {
-            if (document.querySelector('#ver-id').value.length > 0) {
+            if (document.querySelector('#ver-sel-id').value.length > 0) {
                 document.querySelector('#btns-normal').classList.remove('hidden')
                 document.querySelector('#btns-dummy').classList.add('hidden')
             } else {
@@ -256,9 +307,11 @@ templ docScript() {
             }
 
             if (selView == 'current') {
-                document.querySelector('#ver').classList.add('hidden')
+                document.querySelector('#ver-cur').classList.remove('hidden')
+                document.querySelector('#ver-sel').classList.add('hidden')
             } else {
-                document.querySelector('#ver').classList.remove('hidden')
+                document.querySelector('#ver-cur').classList.add('hidden')
+                document.querySelector('#ver-sel').classList.remove('hidden')
             }
 
             if (selView == 'diff') {
@@ -270,21 +323,29 @@ templ docScript() {
                 document.querySelector('#btn-' + view).classList.remove('underline')
             }
 
-            let cnt = document.querySelector('#cnt-' + selView)
-            cnt.classList.remove('hidden')
-            cnt.style['height'] = curHeight + 'px'
+            document.querySelector('#cnt-' + selView).classList.remove('hidden')
+            document.querySelector('#txt-' + selView).style['height'] = curHeight + 'px'
             document.querySelector('#btn-' + selView).classList.add('underline')
         }
 
+        function toggleDetails(subj) {
+            toggleClass('#dbt-' + subj, 'underline')
+            if (subj == 'document') {
+                toggleClass('#doc', 'hidden')
+            } else if (subj == 'version') {
+                toggleClass('#ver', 'hidden')
+            }
+        }
+
         document.addEventListener('htmx:afterRequest', function(ev) {
-            if (ev.detail.target.id == 'ver') {
+            if (ev.detail.target.id == 'ver-sel') {
                 updateView('alternate')
             }
         })
     </script>
 }
 
-templ docPage(doc *db.Doc, curVer *db.Ver, selVer *uuid.UUID, vord *db.Vord) {
+templ docPage(doc *db.Doc, docAuthor string, curVer *db.Ver, curVerAuthor string, selVer *uuid.UUID, vord *db.Vord) {
     <div class="flex flex-row m-auto">
         <div class="w-2xl">
             <div class="flex flex-row items-center mb-1">
@@ -305,21 +366,30 @@ templ docPage(doc *db.Doc, curVer *db.Ver, selVer *uuid.UUID, vord *db.Vord) {
         </div>
         <span class="w-4"/>
         <div class="w-md">
-            @docIDField(doc.ID)
             <div class="mb-1">
                 { doc.Title }
             </div>
             <div id="description" class="max-h-30 overflow-y-scroll p-3 font-mono text-sm whitespace-pre-line break-all border border-gray-500">
                 { doc.Description }
             </div>
-            @verIDField(selVer)
-            @verFragmentStub(selVer)
+
+            @docIDField(doc.ID)
+            @verSelIDField(selVer)
+
+            @formPad()
+            <div class="text-sm">
+                Show details:
+                @docDetailsButtons()
+            </div>
+            @docDetailsContainer(doc, docAuthor)
+            @verDetailsContainer(curVer, curVerAuthor, selVer)
+
             @verListHead()
             @verListStub()
         </div>
     </div>
 }
 
-templ DocPage(doc *db.Doc, curVer *db.Ver, selVer *uuid.UUID, vord *db.Vord) {
-    @PageWrapper("Hawloom - " + formatUUID(doc.ID, true), PageHeader(), docScript(), docPage(doc, curVer, selVer, vord))
+templ DocPage(doc *db.Doc, docAuthor string, curVer *db.Ver, curVerAuthor string, selVer *uuid.UUID, vord *db.Vord) {
+    @PageWrapper("Hawloom - " + formatUUID(doc.ID, true), PageHeader(), utilsScript(), docScript(), docPage(doc, docAuthor, curVer, curVerAuthor, selVer, vord))
 }

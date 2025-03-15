@@ -59,9 +59,13 @@ func (q *Queries) DeleteVer(ctx context.Context, id uuid.UUID) error {
 }
 
 const findCurrentVer = `-- name: FindCurrentVer :one
-SELECT ver.id, ver.doc, ver.vord_num, ver.votes, ver.created_by, ver.created_at, ver.summary, ver.content, doc.id, doc.title, doc.description, doc.flags, doc.created_by, doc.created_at, doc.vord_duration, vord.doc, vord.num, vord.flags, vord.start_at, vord.finish_at
+SELECT ver.id, ver.doc, ver.vord_num, ver.votes, ver.created_by, ver.created_at, ver.summary, ver.content, ver_acc.name AS ver_author,
+    doc.id, doc.title, doc.description, doc.flags, doc.created_by, doc.created_at, doc.vord_duration, doc_acc.name AS doc_author,
+    vord.doc, vord.num, vord.flags, vord.start_at, vord.finish_at
 FROM ver
+    JOIN account AS ver_acc ON ver_acc.id = ver.created_by
     JOIN doc ON doc.id = ver.doc
+    JOIN account AS doc_acc ON doc_acc.id = doc.created_by
     JOIN vord ON vord.doc = ver.doc AND vord.num = -1
 WHERE ver.doc = $1
 ORDER BY ver.vord_num DESC, ver.votes DESC
@@ -69,9 +73,11 @@ LIMIT 1
 `
 
 type FindCurrentVerRow struct {
-	Ver  Ver  `db:"ver"`
-	Doc  Doc  `db:"doc"`
-	Vord Vord `db:"vord"`
+	Ver       Ver    `db:"ver"`
+	VerAuthor string `db:"ver_author"`
+	Doc       Doc    `db:"doc"`
+	DocAuthor string `db:"doc_author"`
+	Vord      Vord   `db:"vord"`
 }
 
 func (q *Queries) FindCurrentVer(ctx context.Context, doc uuid.UUID) (*FindCurrentVerRow, error) {
@@ -86,6 +92,7 @@ func (q *Queries) FindCurrentVer(ctx context.Context, doc uuid.UUID) (*FindCurre
 		&i.Ver.CreatedAt,
 		&i.Ver.Summary,
 		&i.Ver.Content,
+		&i.VerAuthor,
 		&i.Doc.ID,
 		&i.Doc.Title,
 		&i.Doc.Description,
@@ -93,6 +100,7 @@ func (q *Queries) FindCurrentVer(ctx context.Context, doc uuid.UUID) (*FindCurre
 		&i.Doc.CreatedBy,
 		&i.Doc.CreatedAt,
 		&i.Doc.VordDuration,
+		&i.DocAuthor,
 		&i.Vord.Doc,
 		&i.Vord.Num,
 		&i.Vord.Flags,
@@ -103,21 +111,30 @@ func (q *Queries) FindCurrentVer(ctx context.Context, doc uuid.UUID) (*FindCurre
 }
 
 const findVer = `-- name: FindVer :one
-SELECT id, doc, vord_num, votes, created_by, created_at, summary, content FROM ver WHERE id = $1
+SELECT ver.id, ver.doc, ver.vord_num, ver.votes, ver.created_by, ver.created_at, ver.summary, ver.content, account.name AS author
+FROM ver
+    JOIN account ON account.id = ver.created_by
+WHERE ver.id = $1
 `
 
-func (q *Queries) FindVer(ctx context.Context, id uuid.UUID) (*Ver, error) {
+type FindVerRow struct {
+	Ver    Ver    `db:"ver"`
+	Author string `db:"author"`
+}
+
+func (q *Queries) FindVer(ctx context.Context, id uuid.UUID) (*FindVerRow, error) {
 	row := q.db.QueryRow(ctx, findVer, id)
-	var i Ver
+	var i FindVerRow
 	err := row.Scan(
-		&i.ID,
-		&i.Doc,
-		&i.VordNum,
-		&i.Votes,
-		&i.CreatedBy,
-		&i.CreatedAt,
-		&i.Summary,
-		&i.Content,
+		&i.Ver.ID,
+		&i.Ver.Doc,
+		&i.Ver.VordNum,
+		&i.Ver.Votes,
+		&i.Ver.CreatedBy,
+		&i.Ver.CreatedAt,
+		&i.Ver.Summary,
+		&i.Ver.Content,
+		&i.Author,
 	)
 	return &i, err
 }
@@ -221,15 +238,18 @@ func (q *Queries) FindVerList(ctx context.Context, doc uuid.UUID, vordNum int32)
 }
 
 const findVerWithVote = `-- name: FindVerWithVote :one
-SELECT ver.id, ver.doc, ver.vord_num, ver.votes, ver.created_by, ver.created_at, ver.summary, ver.content, CAST(vote.account IS NOT NULL AS BOOLEAN) AS has_vote
+SELECT ver.id, ver.doc, ver.vord_num, ver.votes, ver.created_by, ver.created_at, ver.summary, ver.content, account.name AS author,
+    CAST(vote.account IS NOT NULL AS BOOLEAN) AS has_vote
 FROM ver
+    JOIN account ON account.id = ver.created_by
     LEFT JOIN vote ON vote.ver = $1 AND vote.account = $2
-WHERE id = $1
+WHERE ver.id = $1
 `
 
 type FindVerWithVoteRow struct {
-	Ver     Ver  `db:"ver"`
-	HasVote bool `db:"has_vote"`
+	Ver     Ver    `db:"ver"`
+	Author  string `db:"author"`
+	HasVote bool   `db:"has_vote"`
 }
 
 func (q *Queries) FindVerWithVote(ctx context.Context, ver uuid.UUID, account int32) (*FindVerWithVoteRow, error) {
@@ -244,6 +264,7 @@ func (q *Queries) FindVerWithVote(ctx context.Context, ver uuid.UUID, account in
 		&i.Ver.CreatedAt,
 		&i.Ver.Summary,
 		&i.Ver.Content,
+		&i.Author,
 		&i.HasVote,
 	)
 	return &i, err
@@ -283,9 +304,13 @@ func (q *Queries) FindVersForCommit(ctx context.Context, doc uuid.UUID) ([]*Find
 }
 
 const findWinningVer = `-- name: FindWinningVer :one
-SELECT ver.id, ver.doc, ver.vord_num, ver.votes, ver.created_by, ver.created_at, ver.summary, ver.content, doc.id, doc.title, doc.description, doc.flags, doc.created_by, doc.created_at, doc.vord_duration, vord.doc, vord.num, vord.flags, vord.start_at, vord.finish_at
+SELECT ver.id, ver.doc, ver.vord_num, ver.votes, ver.created_by, ver.created_at, ver.summary, ver.content, ver_acc.name AS ver_author,
+    doc.id, doc.title, doc.description, doc.flags, doc.created_by, doc.created_at, doc.vord_duration, doc_acc.name AS doc_author,
+    vord.doc, vord.num, vord.flags, vord.start_at, vord.finish_at
 FROM ver
+    JOIN account AS ver_acc ON ver_acc.id = ver.created_by
     JOIN doc ON doc.id = ver.doc
+    JOIN account AS doc_acc ON doc_acc.id = doc.created_by
     JOIN vord ON vord.doc = ver.doc AND vord.num = $3
 WHERE ver.doc = $1 AND ver.vord_num = $2
 ORDER BY ver.votes DESC
@@ -299,9 +324,11 @@ type FindWinningVerParams struct {
 }
 
 type FindWinningVerRow struct {
-	Ver  Ver  `db:"ver"`
-	Doc  Doc  `db:"doc"`
-	Vord Vord `db:"vord"`
+	Ver       Ver    `db:"ver"`
+	VerAuthor string `db:"ver_author"`
+	Doc       Doc    `db:"doc"`
+	DocAuthor string `db:"doc_author"`
+	Vord      Vord   `db:"vord"`
 }
 
 func (q *Queries) FindWinningVer(ctx context.Context, arg *FindWinningVerParams) (*FindWinningVerRow, error) {
@@ -316,6 +343,7 @@ func (q *Queries) FindWinningVer(ctx context.Context, arg *FindWinningVerParams)
 		&i.Ver.CreatedAt,
 		&i.Ver.Summary,
 		&i.Ver.Content,
+		&i.VerAuthor,
 		&i.Doc.ID,
 		&i.Doc.Title,
 		&i.Doc.Description,
@@ -323,6 +351,7 @@ func (q *Queries) FindWinningVer(ctx context.Context, arg *FindWinningVerParams)
 		&i.Doc.CreatedBy,
 		&i.Doc.CreatedAt,
 		&i.Doc.VordDuration,
+		&i.DocAuthor,
 		&i.Vord.Doc,
 		&i.Vord.Num,
 		&i.Vord.Flags,

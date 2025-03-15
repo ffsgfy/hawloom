@@ -87,14 +87,17 @@ func HandleDoc(s *api.State) echo.HandlerFunc {
 
 		sc := s.Ctx(c.Request().Context())
 		var doc *db.Doc
-		var ver *db.Ver // current
+		var ver *db.Ver // current ver
 		var vord *db.Vord
+		var docAuthor, verAuthor string
 
 		if params.VordNum == nil {
 			if row, err := sc.Queries.FindCurrentVer(sc.Ctx, params.DocID); err == nil {
 				doc = &row.Doc
 				ver = &row.Ver
 				vord = &row.Vord
+				docAuthor = row.DocAuthor
+				verAuthor = row.VerAuthor
 			} else if errors.Is(err, sql.ErrNoRows) {
 				return api.ErrDocNotFound
 			} else {
@@ -110,6 +113,8 @@ func HandleDoc(s *api.State) echo.HandlerFunc {
 				doc = &row.Doc
 				ver = &row.Ver
 				vord = &row.Vord
+				docAuthor = row.DocAuthor
+				verAuthor = row.VerAuthor
 			} else if errors.Is(err, sql.ErrNoRows) {
 				return handleRedirect(c, fmt.Sprintf("/doc/%v", params.DocID))
 			} else {
@@ -117,7 +122,7 @@ func HandleDoc(s *api.State) echo.HandlerFunc {
 			}
 		}
 
-		content, err := ui.Render(c.Request().Context(), ui.DocPage(doc, ver, params.VerID, vord))
+		content, err := ui.Render(c.Request().Context(), ui.DocPage(doc, docAuthor, ver, verAuthor, params.VerID, vord))
 		if err != nil {
 			return err
 		}

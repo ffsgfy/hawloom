@@ -8,7 +8,7 @@ import (
     "github.com/ffsgfy/hawloom/internal/db"
 )
 
-templ verIDField(verID *uuid.UUID) {
+templ verSelIDField(verID *uuid.UUID) {
     {{
         value := ""
         if verID != nil {
@@ -16,7 +16,7 @@ templ verIDField(verID *uuid.UUID) {
         }
     }}
 
-    <input type="text" id="ver-id" name="ver-id" class="hidden" hx-swap-oob="true" value={ value }/>
+    <input type="text" id="ver-sel-id" name="ver-id" class="hidden" hx-swap-oob="true" value={ value }/>
 }
 
 templ VerVoteUnvoteButton(verID uuid.UUID, hasVote bool) {
@@ -34,21 +34,29 @@ templ VerVoteUnvoteButton(verID uuid.UUID, hasVote bool) {
     <span hx-post={ url } class="underline hover:cursor-pointer">{ buttonText }</span>
 }
 
-templ VerFragment(ver *db.Ver, vote int) {
-    {{
-        summary := "—"
-        if ver.Summary != "" {
-            summary = ver.Summary
-        }
-    }}
+templ VerFragment(ver *db.Ver, author string, vote int) {
+    @verDetails(ver, author, vote)
+    @docViewContent("selected", ver.Content)
+    @verSelIDField(&ver.ID)
+}
 
-    @formPad()
+func verSummary(summary string) string {
+    if summary == "" {
+        return "—"
+    }
+    return summary
+}
+
+templ verDetails(ver *db.Ver, author string, vote int) {
     <div class="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-sm pl-4 border-l border-l-gray-500">
         <span>Version:</span>
         <span>{ formatUUID(ver.ID, false) }</span>
 
+        <span>Author:</span>
+        @accountName(author, "")
+
         <span>Summary:</span>
-        <div class="whitespace-pre-line break-word">{ summary }</div>
+        <div class="whitespace-pre-line break-word">{ verSummary(ver.Summary) }</div>
 
         <span>Votes:</span>
         <div class="flex flex-row">
@@ -59,16 +67,19 @@ templ VerFragment(ver *db.Ver, vote int) {
             }
         </div>
     </div>
-
-    @docViewContent("selected", ver.Content)
-    @verIDField(&ver.ID)
 }
 
-templ verFragmentStub(verID *uuid.UUID) {
-    <div id="ver">
-        if verID != nil {
-            <div hx-get={ fmt.Sprintf("/ver/%v", *verID) } hx-target="#ver" hx-trigger="load"/>
-        }
+templ verDetailsContainer(curVer *db.Ver, curVerAuthor string, selVer *uuid.UUID) {
+    <div id="ver" class="hidden">
+        @formPad()
+        <div id="ver-cur">
+            @verDetails(curVer, curVerAuthor, -1)
+        </div>
+        <div id="ver-sel" class="hidden">
+            if selVer != nil {
+                <div hx-get={ fmt.Sprintf("/ver/%v", *selVer) } hx-target="#ver-sel" hx-trigger="load"/>
+            }
+        </div>
     </div>
 }
 
@@ -83,7 +94,7 @@ type VerRow struct {
 templ verListRow(verRow *VerRow) {
     <tr class="align-top">
         <td class="p-1 border-t border-t-gray-500">
-            <span hx-get={ fmt.Sprintf("/ver/%v", verRow.ID) } hx-target="#ver" hx-replace-url={ fmt.Sprintf("?ver=%v", verRow.ID) } class="hover:cursor-pointer">
+            <span hx-get={ fmt.Sprintf("/ver/%v", verRow.ID) } hx-target="#ver-sel" hx-replace-url={ fmt.Sprintf("?ver=%v", verRow.ID) } class="hover:cursor-pointer">
                 { formatUUID(verRow.ID, true) }
             </span>
         </td>
@@ -91,7 +102,7 @@ templ verListRow(verRow *VerRow) {
             @accountName(verRow.Author, "")
         </td>
         <td class="p-1 border-t border-t-gray-500">
-            { verRow.Summary }
+            { verSummary(verRow.Summary) }
         </td>
         <td class="p-1 border-t border-t-gray-500">
             <span if verRow.HasVote { class="underline" }>
@@ -104,10 +115,10 @@ templ verListRow(verRow *VerRow) {
 templ VerList(verRows []*VerRow) {
     <table class="w-full table-auto">
         <thead>
-            <tr class="text-center text-sm font-semibold">
-                <td class="py-1">ID</td>
-                <td class="py-1">Author</td>
-                <td class="py-1">Summary</td>
+            <tr class="text-sm italic">
+                <td class="py-1 pr-2">ID</td>
+                <td class="py-1 pr-2">Author</td>
+                <td class="py-1 pr-2">Summary</td>
                 <td class="py-1">Votes</td>
             </tr>
         </thead>

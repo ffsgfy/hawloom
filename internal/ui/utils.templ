@@ -34,3 +34,16 @@ func formatUUID(value uuid.UUID, shorten bool) string {
 templ accountName(name, class string) {
     <a href={ templ.SafeURL(fmt.Sprintf("/user/%s", name)) } class={ class }>{ name }</a>
 }
+
+templ utilsScript() {
+    <script>
+        function toggleClass(selector, cls) {
+            let elem = document.querySelector(selector)
+            if (elem.classList.contains(cls)) {
+                elem.classList.remove(cls)
+            } else {
+                elem.classList.add(cls)
+            }
+        }
+    </script>
+}

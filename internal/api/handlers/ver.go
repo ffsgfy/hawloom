@@ -27,8 +27,8 @@ func HandleVer(s *api.State) echo.HandlerFunc {
 
 		sc := s.Ctx(c.Request().Context())
 		var ver *db.Ver
+		var author string
 		var vote int = -1
-		var err error
 
 		if authToken, _ := api.GetValidAuthToken(sc.Ctx); authToken != nil {
 			vote = 0
@@ -41,17 +41,21 @@ func HandleVer(s *api.State) echo.HandlerFunc {
 				return err
 			} else {
 				ver = &row.Ver
+				author = row.Author
 				if row.HasVote {
 					vote = 1
 				}
 			}
 		} else {
-			if ver, err = sc.Queries.FindVer(sc.Ctx, params.VerID); err != nil {
+			if row, err := sc.Queries.FindVer(sc.Ctx, params.VerID); err != nil {
 				return err
+			} else {
+				ver = &row.Ver
+				author = row.Author
 			}
 		}
 
-		content, err := ui.Render(sc.Ctx, ui.VerFragment(ver, vote))
+		content, err := ui.Render(sc.Ctx, ui.VerFragment(ver, author, vote))
 		if err != nil {
 			return err
 		}
