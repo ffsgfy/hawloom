@@ -124,3 +124,35 @@ func HandleDoc(s *api.State) echo.HandlerFunc {
 		return c.HTML(http.StatusOK, content)
 	}
 }
+
+type docTimerParams struct {
+	DocID uuid.UUID `param:"doc"`
+	Start int64     `query:"start"`
+}
+
+func HandleDocTimer(s *api.State) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		var params docTimerParams
+		if err := c.Bind(&params); err != nil {
+			return err
+		}
+
+		sc := s.Ctx(c.Request().Context())
+		if vord, err := sc.Queries.FindVord(sc.Ctx, params.DocID, -1); err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return api.ErrNoVordExists
+			}
+			return err
+		} else {
+			if vord.StartAt.Unix() > params.Start {
+				return handleRedirect(c, fmt.Sprintf("/doc/%v", vord.Doc))
+			}
+
+			content, err := ui.Render(c.Request().Context(), ui.DocVordTimer(vord))
+			if err != nil {
+				return err
+			}
+			return c.HTML(http.StatusOK, content)
+		}
+	}
+}

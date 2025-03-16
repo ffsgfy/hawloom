@@ -51,6 +51,24 @@ func (q *Queries) CreateVordZero(ctx context.Context, doc uuid.UUID) error {
 	return err
 }
 
+const findVord = `-- name: FindVord :one
+SELECT doc, num, flags, start_at, finish_at FROM vord
+WHERE doc = $1 AND num = $2
+`
+
+func (q *Queries) FindVord(ctx context.Context, doc uuid.UUID, num int32) (*Vord, error) {
+	row := q.db.QueryRow(ctx, findVord, doc, num)
+	var i Vord
+	err := row.Scan(
+		&i.Doc,
+		&i.Num,
+		&i.Flags,
+		&i.StartAt,
+		&i.FinishAt,
+	)
+	return &i, err
+}
+
 const findVordForCommit = `-- name: FindVordForCommit :one
 SELECT vord.doc, vord.num, vord.flags, vord.start_at, vord.finish_at, doc.id, doc.title, doc.description, doc.flags, doc.created_by, doc.created_at, doc.vord_duration FROM vord
     JOIN doc ON doc.id = vord.doc

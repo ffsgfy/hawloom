@@ -208,7 +208,26 @@ func docVordExtensionReason(flags api.VordFlags) string {
     return "unknown reason"
 }
 
-templ docVordNumDisplay(curVer *db.Ver, vord *db.Vord) {
+templ DocVordTimer(vord *db.Vord) {
+    {{ timer := max(int(vord.FinishAt.Sub(time.Now()).Seconds()), 0) }}
+
+    Time remaining:
+    <span id="timer-num">
+        { fmt.Sprint(timer) }
+    </span>
+
+    if vord.Num < 0 {
+        if timer > 0 {
+            if reason := docVordExtensionReason(api.VordFlags(vord.Flags)); reason != "" {
+                (extended: { reason })
+            }
+        } else {
+            (awaiting commit)
+        }
+    }
+}
+
+templ docVordDisplay(curVer *db.Ver, vord *db.Vord) {
     <div class="flex flex-row items-center">
         Round:
         <span class="w-1"/>
@@ -224,19 +243,8 @@ templ docVordNumDisplay(curVer *db.Ver, vord *db.Vord) {
         }
 
         <span class="flex-1"/>
-
-        {{ timer := max(int(vord.FinishAt.Sub(time.Now()).Seconds()), 0) }}
-        <span class="text-sm">
-            Time remaining: { fmt.Sprint(timer) }
-            if vord.Num < 0 {
-                if timer > 0 {
-                    if reason := docVordExtensionReason(api.VordFlags(vord.Flags)); reason != "" {
-                        (extended: { reason })
-                    }
-                } else {
-                    (awaiting commit)
-                }
-            }
+        <span id="timer" class="text-sm hover:cursor-pointer" hx-get={ fmt.Sprintf("/doc/%v/timer?start=%d", vord.Doc, vord.StartAt.Unix()) }>
+            @DocVordTimer(vord)
         </span>
     </div>
     @docVordNumField(vord)
@@ -324,7 +332,29 @@ templ docScript() {
     </script>
 }
 
+templ docTimerScript(docID uuid.UUID) {
+    <script>
+        window.setInterval(() => {
+            let numElem = document.querySelector('#timer-num')
+            let num = parseInt(numElem.innerHTML)
+            if (num > 0) {
+                num -= 1
+                numElem.innerHTML = num.toString()
+                if (num == 0) {
+                    timerRefreshAt = Date.now() + 2000
+                }
+            } else {
+                htmx.trigger('#timer', 'click', {})
+            }
+        }, 1000)
+    </script>
+}
+
 templ docPage(doc *db.Doc, docAuthor string, curVer *db.Ver, curVerAuthor string, selVer *uuid.UUID, vord *db.Vord) {
+    if vord.Num < 0 {
+        @docTimerScript(doc.ID)
+    }
+
     <div class="flex flex-row m-auto">
         <div class="w-2xl">
             <div class="flex flex-row items-center mb-1">
@@ -354,7 +384,7 @@ templ docPage(doc *db.Doc, docAuthor string, curVer *db.Ver, curVerAuthor string
             @docViewContainer("diff", "", false)
 
             @formPad()
-            @docVordNumDisplay(curVer, vord)
+            @docVordDisplay(curVer, vord)
         </div>
         <span class="w-4"/>
         <div class="w-md">

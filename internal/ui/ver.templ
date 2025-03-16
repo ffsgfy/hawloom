@@ -52,7 +52,7 @@ templ verDeleteButton(ver *db.Ver) {
         }
     }}
 
-    <span id="btn-delete" hx-delete={ fmt.Sprintf("/ver/%v", ver.ID) } hx-swap-oob="true" class={ class }>Delete</span>
+    <span id="btn-delete" hx-delete={ fmt.Sprintf("/ver/%v", ver.ID) } hx-confirm="Delete this version?" hx-swap-oob="true" class={ class }>Delete</span>
 }
 
 templ verButtonsStub() {

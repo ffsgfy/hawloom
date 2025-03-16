@@ -27,7 +27,7 @@
     },
     "vord": {
         "min_duration": 10,
-        "duration_extension": 0.1,
+        "duration_extension": 0.25,
         "autocommit_period": 2
     },
     "misc": {
