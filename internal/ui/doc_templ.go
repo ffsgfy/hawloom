@@ -961,7 +961,7 @@ func DocVordTimer(vord *db.Vord) templ.Component {
 		}
 		ctx = templ.ClearChildren(ctx)
 		timer := max(int(vord.FinishAt.Sub(time.Now()).Seconds()), 0)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "Time remaining:  <span id=\"timer-num\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "Time remaining: <span id=\"timer-num\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

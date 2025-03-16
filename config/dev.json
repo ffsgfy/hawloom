@@ -12,7 +12,8 @@
     },
     "auth": {
         "key_size": 32,
-        "token_ttl": 28800,
+        "token_ttl": 14400,
+        "token_renew_ttl": 600,
         "cookie": "auth"
     },
     "account": {

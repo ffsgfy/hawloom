@@ -29,9 +29,10 @@ type HTTPConfig struct {
 }
 
 type AuthConfig struct {
-	KeySize  Value[int]    `json:"key_size"`
-	TokenTTL Value[int]    `json:"token_ttl"`
-	Cookie   Value[string] `json:"cookie"`
+	KeySize       Value[int]    `json:"key_size"`
+	TokenTTL      Value[int64]  `json:"token_ttl"`
+	TokenRenewTTL Value[int64]  `json:"token_renew_ttl"`
+	Cookie        Value[string] `json:"cookie"`
 }
 
 type AccountConfig struct {

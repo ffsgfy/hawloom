@@ -99,15 +99,15 @@ type AuthToken struct {
 	AccountName string `json:"n"`
 	AccountID   int32  `json:"i"`
 	KeyID       int32  `json:"k"`
-	Expires     int64  `json:"e"` // unix timestamp in seconds
+	CreatedAt   int64  `json:"t"` // unix timestamp in seconds
 }
 
-func (t *AuthToken) TTL() int64 {
-	return t.Expires - time.Now().Unix()
+func (t *AuthToken) TTL(ttl int64) int64 {
+	return t.CreatedAt + ttl - time.Now().Unix()
 }
 
 func (t *AuthToken) String() string {
-	return fmt.Sprintf("<%d:%d:%d>", t.AccountID, t.KeyID, t.Expires)
+	return fmt.Sprintf("<%d:%d:%d>", t.AccountID, t.KeyID, t.CreatedAt)
 }
 
 func ComputeHMAC(data, key, out []byte) ([]byte, error) {
@@ -128,12 +128,12 @@ func CheckHMAC(data, key, hm []byte) (bool, error) {
 	return hmac.Equal(dataHM, hm), nil
 }
 
-func CreateAuthToken(key *AuthKey, accountName string, accountID int32, ttl int) *AuthToken {
+func CreateAuthToken(key *AuthKey, accountName string, accountID int32) *AuthToken {
 	return &AuthToken{
 		AccountName: accountName,
 		AccountID:   accountID,
 		KeyID:       key.ID,
-		Expires:     time.Now().Unix() + int64(ttl),
+		CreatedAt:   time.Now().Unix(),
 	}
 }
 
@@ -188,17 +188,21 @@ func DecodeAuthToken(str string) (*AuthToken, []byte, []byte, error) {
 	return &token, tokenData, hmacData, nil
 }
 
-func CreateAuthCookie(key *AuthKey, token *AuthToken, name string) (*http.Cookie, error) {
+func (sc *StateCtx) CreateAuthCookie(accountName string, accountID int32) (*http.Cookie, error) {
+	key := sc.Auth.KeyInUse.Load()
+	token := CreateAuthToken(key, accountName, accountID)
 	tokenStr, err := EncodeAuthToken(key, token)
 	if err != nil {
 		return nil, err
 	}
 
 	return &http.Cookie{
-		Name:     name,
-		Value:    tokenStr,
-		Path:     "/",
-		Expires:  time.Unix(token.Expires, 0),
+		Name:  sc.Config.Auth.Cookie.V,
+		Value: tokenStr,
+		Path:  "/",
+		Expires: time.Unix(token.CreatedAt, 0).Add(
+			time.Second * time.Duration(sc.Config.Auth.TokenTTL.V),
+		),
 		SameSite: http.SameSiteStrictMode,
 	}, nil
 }
@@ -256,7 +260,7 @@ func (s *State) CheckAuthToken(tokenStr string) (*AuthToken, error) {
 		return token, ErrWrongTokenHash
 	}
 
-	if token.TTL() <= 0 {
+	if token.TTL(s.Config.Auth.TokenTTL.V) <= 0 {
 		return token, ErrExpiredToken
 	}
 

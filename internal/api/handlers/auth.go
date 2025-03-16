@@ -12,9 +12,7 @@ import (
 )
 
 func handleAuthSuccess(c echo.Context, sc *api.StateCtx, account *db.Account) error {
-	key := sc.Auth.KeyInUse.Load()
-	token := api.CreateAuthToken(key, account.Name, account.ID, sc.Config.Auth.TokenTTL.V)
-	cookie, err := api.CreateAuthCookie(key, token, sc.Config.Auth.Cookie.V)
+	cookie, err := sc.CreateAuthCookie(account.Name, account.ID)
 	if err != nil {
 		return err
 	}

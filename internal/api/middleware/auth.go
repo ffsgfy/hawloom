@@ -9,11 +9,19 @@ import (
 func ManageAuth(s *api.State) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			authCookie, err := c.Cookie(s.Config.Auth.Cookie.V)
-			if err == nil && len(authCookie.Value) > 0 {
+			if cookie, err := c.Cookie(s.Config.Auth.Cookie.V); err == nil && len(cookie.Value) > 0 {
 				req := c.Request()
-				authState := s.CreateAuthState(authCookie.Value)
-				c.SetRequest(req.WithContext(api.WithAuthState(req.Context(), authState)))
+				authState := s.CreateAuthState(cookie.Value)
+				ctx := api.WithAuthState(req.Context(), authState)
+				c.SetRequest(req.WithContext(ctx))
+
+				if authState.Valid() && authState.Token.TTL(s.Config.Auth.TokenRenewTTL.V) <= 0 {
+					if cookie, err := s.Ctx(ctx).CreateAuthCookie(
+						authState.Token.AccountName, authState.Token.AccountID,
+					); err == nil {
+						c.SetCookie(cookie)
+					}
+				}
 			}
 
 			// TODO: auto-renew tokens that will soon expire
