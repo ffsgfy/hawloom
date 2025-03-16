@@ -1544,7 +1544,7 @@ func docList(head string, docRows []*DocRow, withAuthor bool) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 94, "</div><table class=\"w-full table-auto\"><thead><tr class=\"italic\"><td class=\"py-1 pr-2\">ID</td><td class=\"py-1 pr-2\">Title</td><td class=\"py-1 pr-2\">Description</td>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 94, "</div><div class=\"px-2\"><table class=\"w-full table-auto\"><thead><tr class=\"italic\"><td class=\"py-1 pr-2\">ID</td><td class=\"py-1 pr-2\">Title</td><td class=\"py-1 pr-2\">Description</td>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1578,7 +1578,7 @@ func docList(head string, docRows []*DocRow, withAuthor bool) templ.Component {
 			var templ_7745c5c3_Var59 string
 			templ_7745c5c3_Var59, templ_7745c5c3_Err = templ.JoinStringErrs(colspan)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `doc.templ`, Line: 472, Col: 37}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `doc.templ`, Line: 473, Col: 41}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var59))
 			if templ_7745c5c3_Err != nil {
@@ -1589,7 +1589,7 @@ func docList(head string, docRows []*DocRow, withAuthor bool) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 99, "</tbody></table>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 99, "</tbody></table></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

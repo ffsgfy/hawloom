@@ -20,7 +20,7 @@ templ verSelIDField(verID *uuid.UUID) {
     <input type="text" id="ver-sel-id" name="ver-id" class="hidden" hx-swap-oob="true" value={ value }/>
 }
 
-templ VerVoteUnvoteButton(verID uuid.UUID, hasVote bool) {
+templ VerVoteUnvoteButton(verID uuid.UUID, hasVote, canVote bool) {
     {{
         var url, buttonText string
         if hasVote {
@@ -31,40 +31,52 @@ templ VerVoteUnvoteButton(verID uuid.UUID, hasVote bool) {
             buttonText = "Vote"
         }
 
+        active := hasVote || canVote
+        if authToken, _ := api.GetValidAuthToken(ctx); authToken == nil {
+             active = false
+        }
+
         class := "px-2"
-        if authToken, _ := api.GetValidAuthToken(ctx); authToken != nil {
+        if active {
             class += " hover:cursor-pointer"
         } else {
             class += " text-gray-500"
         }
     }}
 
-    <span id="btn-vote-unvote" hx-post={ url } hx-swap-oob="true" class={ class }>{ buttonText }</span>
+    <span id="btn-vote-unvote" if active { hx-post={ url } } hx-swap-oob="true" class={ class }>{ buttonText }</span>
 }
 
 templ verDeleteButton(ver *db.Ver) {
     {{
+        active := false
+        if authToken, _ := api.GetValidAuthToken(ctx); authToken != nil {
+            if authToken.AccountID == ver.CreatedBy {
+                active = true
+            }
+        }
+
         class := "px-2"
-        if authToken, _ := api.GetValidAuthToken(ctx); authToken != nil && authToken.AccountID == ver.CreatedBy {
+        if active {
             class += " hover:cursor-pointer"
         } else {
             class += " text-gray-500"
         }
     }}
 
-    <span id="btn-delete" hx-delete={ fmt.Sprintf("/ver/%v", ver.ID) } hx-confirm="Delete this version?" hx-swap-oob="true" class={ class }>Delete</span>
+    <span id="btn-delete" if active { hx-delete={ fmt.Sprintf("/ver/%v", ver.ID) } hx-confirm="Delete this version?" } hx-swap-oob="true" class={ class }>Delete</span>
 }
 
 templ verButtonsStub() {
     {{ var dummyVer db.Ver }}
     <span id="btns-ver" class="hidden">
-        @VerVoteUnvoteButton(dummyVer.ID, false)
+        @VerVoteUnvoteButton(dummyVer.ID, false, false)
         |
         @verDeleteButton(&dummyVer)
     </span>
 }
 
-templ verDetails(ver *db.Ver, author string, vote int) {
+templ verDetails(ver *db.Ver, author string) {
     <div class="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-sm pl-4 border-l border-l-gray-500">
         <span>Version:</span>
         <span>{ formatUUID(ver.ID, false) }</span>
@@ -84,7 +96,7 @@ templ verDetailsContainer(curVer *db.Ver, curVerAuthor string, selVer *uuid.UUID
     <div id="ver" if hidden { class="hidden" }>
         @formPad()
         <div id="ver-cur">
-            @verDetails(curVer, curVerAuthor, -1)
+            @verDetails(curVer, curVerAuthor)
         </div>
         <div id="ver-sel" class="hidden">
             if selVer != nil {
@@ -94,11 +106,11 @@ templ verDetailsContainer(curVer *db.Ver, curVerAuthor string, selVer *uuid.UUID
     </div>
 }
 
-templ VerFragment(ver *db.Ver, author string, vote int) {
-    @verDetails(ver, author, vote)
+templ VerFragment(ver *db.Ver, author string, hasVote, canVote bool) {
+    @verDetails(ver, author)
     @docViewContent("selected", ver.Content)
     @verSelIDField(&ver.ID)
-    @VerVoteUnvoteButton(ver.ID, vote > 0)
+    @VerVoteUnvoteButton(ver.ID, hasVote, canVote)
     @verDeleteButton(ver)
 }
 

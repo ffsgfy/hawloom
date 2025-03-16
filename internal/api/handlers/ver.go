@@ -13,6 +13,7 @@ import (
 	"github.com/ffsgfy/hawloom/internal/api"
 	"github.com/ffsgfy/hawloom/internal/db"
 	"github.com/ffsgfy/hawloom/internal/ui"
+	"github.com/ffsgfy/hawloom/internal/utils"
 )
 
 type verParams struct {
@@ -29,10 +30,9 @@ func HandleVer(s *api.State) echo.HandlerFunc {
 		sc := s.Ctx(c.Request().Context())
 		var ver *db.Ver
 		var author string
-		var vote int = -1
+		var hasVote, canVote bool
 
 		if authToken, _ := api.GetValidAuthToken(sc.Ctx); authToken != nil {
-			vote = 0
 			if row, err := sc.Queries.FindVerWithVote(
 				sc.Ctx, params.VerID, authToken.AccountID,
 			); err != nil {
@@ -42,9 +42,10 @@ func HandleVer(s *api.State) echo.HandlerFunc {
 				return err
 			} else {
 				ver = &row.Ver
-				author = row.Author
-				if row.HasVote {
-					vote = 1
+				author = row.VerAuthor
+				hasVote = row.VerVoteExists
+				if utils.TestFlags(row.DocFlags, api.DocFlagApproval) || !row.DocVoteExists {
+					canVote = true
 				}
 			}
 		} else {
@@ -56,7 +57,7 @@ func HandleVer(s *api.State) echo.HandlerFunc {
 			}
 		}
 
-		content, err := ui.Render(sc.Ctx, ui.VerFragment(ver, author, vote))
+		content, err := ui.Render(sc.Ctx, ui.VerFragment(ver, author, hasVote, canVote))
 		if err != nil {
 			return err
 		}
@@ -99,7 +100,7 @@ func HandleVerVoteUnvote(s *api.State, vote bool) echo.HandlerFunc {
 			return err
 		}
 
-		content, err := ui.Render(sc.Ctx, ui.VerVoteUnvoteButton(params.VerID, vote))
+		content, err := ui.Render(sc.Ctx, ui.VerVoteUnvoteButton(params.VerID, vote, true))
 		if err != nil {
 			return err
 		}
