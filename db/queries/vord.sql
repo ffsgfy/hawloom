@@ -7,7 +7,7 @@ INSERT INTO vord (doc, num, flags, start_at, finish_at)
 VALUES ($1, -1, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + CAST(sqlc.arg(duration) AS INTERVAL))
 ON CONFLICT DO NOTHING;
 
--- name: LockVord :execrows
+-- name: LockVord :one
 SELECT 1 FROM vord
 WHERE doc = $1 AND num = -1
 FOR SHARE;

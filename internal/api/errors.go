@@ -41,9 +41,9 @@ var (
 	ErrDeletePastVote = echo.NewHTTPError(http.StatusConflict, "cannot delete past vote")
 	ErrVoteNotFound   = echo.NewHTTPError(http.StatusNotFound, "vote not found")
 
-	ErrNoVordExists   = echo.NewHTTPError(http.StatusConflict, "no active vord currently exists")
-	ErrVordExists     = echo.NewHTTPError(http.StatusConflict, "active vord already exists")
-	ErrCommitPastVord = echo.NewHTTPError(http.StatusConflict, "cannot commit past vord")
+	ErrNoVordExists   = echo.NewHTTPError(http.StatusConflict, "no active voting round currently exists")
+	ErrVordExists     = echo.NewHTTPError(http.StatusConflict, "active voting round already exists")
+	ErrCommitPastVord = echo.NewHTTPError(http.StatusConflict, "cannot commit past voting round")
 )
 
 func OnBindError(err error) error {

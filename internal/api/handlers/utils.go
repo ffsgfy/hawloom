@@ -5,6 +5,8 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
+
+	"github.com/ffsgfy/hawloom/internal/api"
 )
 
 const (
@@ -49,5 +51,14 @@ func handleFormError(next echo.HandlerFunc) echo.HandlerFunc {
 			}
 		}
 		return errors.Join(err, c.HTML(http.StatusOK, "Internal error"))
+	}
+}
+
+func redirectNoAuth(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		if authToken, _ := api.GetValidAuthToken(c.Request().Context()); authToken == nil {
+			return handleRedirect(c, "/")
+		}
+		return next(c)
 	}
 }

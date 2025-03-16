@@ -30,7 +30,7 @@ func AddHandlers(e *echo.Echo, s *api.State) {
 	baseGroup.POST("/auth/register", HandleRegisterPost(s), handleFormError)
 	authGroup.GET("/auth/logout", HandleLogout(s))
 
-	authGroup.GET("/doc/new", HandleNewDoc(s))
+	authGroup.GET("/doc/new", HandleNewDoc(s), redirectNoAuth)
 	authGroup.POST("/doc/new", HandleNewDocPost(s), handleFormError)
 	authGroup.GET("/doc/:doc", HandleDoc(s))
 	authGroup.GET("/doc/:doc/:vord", HandleDoc(s))
@@ -39,4 +39,6 @@ func AddHandlers(e *echo.Echo, s *api.State) {
 	authGroup.POST("/ver/:ver/vote", HandleVerVoteUnvote(s, true))
 	authGroup.POST("/ver/:ver/unvote", HandleVerVoteUnvote(s, false))
 	authGroup.DELETE("/ver/:ver", HandleVerDelete(s))
+	authGroup.GET("/ver/new", HandleNewVer(s), redirectNoAuth)
+	authGroup.POST("/ver/new", HandleNewVerPost(s), handleFormError)
 }

@@ -16,7 +16,7 @@ templ newDocPage() {
     <form hx-post="" hx-target="#form-error" class="flex flex-row m-auto">
         <div class="w-2xl">
             @formLabel("Content", "content")
-            <textarea id="content" name="content" class="w-full h-124 p-3 resize-y font-mono text-sm break-all"/>
+            <textarea id="content" name="content" class="block w-full h-124 p-3 resize-y font-mono text-sm break-all"/>
         </div>
         <span class="w-4"/>
         <div class="w-md">
@@ -24,7 +24,7 @@ templ newDocPage() {
             <input type="text" id="title" name="title" class="w-full p-2"/>
             @formPad()
             @formLabel("Description", "description")
-            <textarea id="description" name="description" class="w-full h-30 p-3 resize-y font-mono text-sm break-all"/>
+            <textarea id="description" name="description" class="block w-full h-30 p-3 resize-y font-mono text-sm break-all"/>
             @formPad()
             @formLabel("Settings", "")
             @formPad()
@@ -141,15 +141,19 @@ func docFlags(doc *db.Doc) string {
     return strings.Join(items, ", ")
 }
 
-templ docDetailsContainer(doc *db.Doc, docAuthor string) {
-    <div id="doc" class="hidden">
+templ docDetailsContainer(doc *db.Doc, docAuthor string, hidden bool) {
+    <div id="doc" if hidden { class="hidden" }>
         @formPad()
         <div class="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-sm pl-4 border-l border-l-gray-500">
             <span>Document:</span>
-            <span>{ formatUUID(doc.ID, false) }</span>
+            <span>
+                <a href={ templ.SafeURL(fmt.Sprintf("/doc/%v", doc.ID)) }>
+                    { formatUUID(doc.ID, false) }
+                </a>
+            </span>
 
             <span>Author:</span>
-            @accountName(docAuthor, "")
+            <span>@accountName(docAuthor, "")</span>
 
             <span>Voting round:</span>
             <span>{ fmt.Sprintf("%d seconds", doc.VordDuration) }</span>
@@ -238,48 +242,15 @@ templ docVordNumDisplay(curVer *db.Ver, vord *db.Vord) {
     @docVordNumField(vord)
 }
 
+templ docDescription(text string) {
+    <div id="description" class="max-h-30 overflow-y-scroll p-3 font-mono text-sm whitespace-pre-line break-all border border-gray-500">
+        { text }
+    </div>
+}
+
 templ docScript() {
     <script>
         const views = ['current', 'selected', 'diff']
-
-        // TODO: better tokenization
-        function splitViewContent(content) {
-            let tokens = []
-            let lines = content.split('\n')
-            for (line of lines) {
-                for (token of line.split(/\s+/)) {
-                    if (token.length > 0) {
-                        tokens.push(token)
-                    }
-                }
-                tokens.push('\n')
-            }
-            return tokens
-        }
-
-        function updateDiffView() {
-            let txtCur = document.querySelector('#txt-current')
-            let txtSel = document.querySelector('#txt-selected')
-            let txtDiff = document.querySelector('#txt-diff')
-
-            let tokCur = splitViewContent(txtCur.innerHTML)
-            let tokSel = splitViewContent(txtSel.innerHTML)
-            let diff = patienceDiff(tokCur, tokSel)
-
-            txtDiff.textContent = ''
-            for (line of diff.lines) {
-                let tok = document.createElement('span')
-                if (line.aIndex < 0) {
-                    tok.classList.add('bg-green-100')
-                }
-                if (line.bIndex < 0) {
-                    tok.classList.add('bg-red-100')
-                }
-                tok.textContent = line.line
-                txtDiff.append(tok)
-                txtDiff.append(' ')
-            }
-        }
 
         function updateView(selView) {
             if (document.querySelector('#ver-sel-id').value.length > 0) {
@@ -293,10 +264,9 @@ templ docScript() {
             let curView = ''
             let curHeight = 0
             for (view of views) {
-                let cnt = document.querySelector('#cnt-' + view)
-                if (!cnt.classList.contains('hidden')) {
+                if (!document.querySelector('#cnt-' + view).classList.contains('hidden')) {
                     curView = view
-                    curHeight = cnt.offsetHeight
+                    curHeight = document.querySelector('#txt-' + view).offsetHeight
                     break
                 }
             }
@@ -320,7 +290,11 @@ templ docScript() {
             }
 
             if (selView == 'diff') {
-                updateDiffView()
+                updateDiff(
+                    document.querySelector('#txt-diff'),
+                    document.querySelector('#txt-current').innerHTML,
+                    document.querySelector('#txt-selected').innerHTML,
+                )
             }
 
             for (view of views) {
@@ -384,25 +358,23 @@ templ docPage(doc *db.Doc, docAuthor string, curVer *db.Ver, curVerAuthor string
         </div>
         <span class="w-4"/>
         <div class="w-md">
+            @docIDField(doc.ID)
+            @verSelIDField(selVer)
+
             <div class="mb-1">
                 { doc.Title }
             </div>
-            <div id="description" class="max-h-30 overflow-y-scroll p-3 font-mono text-sm whitespace-pre-line break-all border border-gray-500">
-                { doc.Description }
-            </div>
-
-            @docIDField(doc.ID)
-            @verSelIDField(selVer)
+            @docDescription(doc.Description)
 
             @formPad()
             <div class="text-sm">
                 Show details:
                 @docDetailsButtons()
             </div>
-            @docDetailsContainer(doc, docAuthor)
-            @verDetailsContainer(curVer, curVerAuthor, selVer)
+            @docDetailsContainer(doc, docAuthor, true)
+            @verDetailsContainer(curVer, curVerAuthor, selVer, true)
 
-            @verListHead(doc.ID)
+            @verListHead(doc.ID, vord.Num)
             @verListStub()
         </div>
     </div>

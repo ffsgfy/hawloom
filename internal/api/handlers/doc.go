@@ -16,10 +16,6 @@ import (
 
 func HandleNewDoc(s *api.State) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		if authToken, _ := api.GetValidAuthToken(c.Request().Context()); authToken == nil {
-			return handleRedirect(c, "/")
-		}
-
 		content, err := ui.Render(c.Request().Context(), ui.NewDocPage())
 		if err != nil {
 			return err
@@ -28,7 +24,7 @@ func HandleNewDoc(s *api.State) echo.HandlerFunc {
 	}
 }
 
-type newDocParams struct {
+type newDocPostParams struct {
 	Title       string `form:"title"`
 	Description string `form:"description"`
 	Content     string `form:"content"`
@@ -40,7 +36,7 @@ type newDocParams struct {
 
 func HandleNewDocPost(s *api.State) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		var params newDocParams
+		var params newDocPostParams
 		if err := c.Bind(&params); err != nil {
 			return err
 		}
@@ -57,18 +53,17 @@ func HandleNewDocPost(s *api.State) echo.HandlerFunc {
 		}
 
 		sc := s.Ctx(c.Request().Context())
-		doc, _, err := sc.CreateDoc(&api.CreateDocParams{
+		if doc, _, err := sc.CreateDoc(&api.CreateDocParams{
 			Title:        params.Title,
 			Description:  params.Description,
 			Content:      params.Content,
 			Flags:        flags,
 			VordDuration: params.VDuration,
-		})
-		if err != nil {
+		}); err != nil {
 			return err
+		} else {
+			return handleRedirect(c, "/doc/"+doc.ID.String())
 		}
-
-		return handleRedirect(c, "/doc/"+doc.ID.String())
 	}
 }
 

@@ -25,6 +25,7 @@ templ PageHeader() {
             |
             <a href="/auth/register" class="px-2">Register</a>
         } else {
+            User
             @accountName(authToken.AccountName, "underline px-2")
             |
             <a href="/doc/new" class="px-2">New document</a>

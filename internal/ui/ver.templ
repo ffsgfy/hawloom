@@ -70,7 +70,7 @@ templ verDetails(ver *db.Ver, author string, vote int) {
         <span>{ formatUUID(ver.ID, false) }</span>
 
         <span>Author:</span>
-        @accountName(author, "")
+        <span>@accountName(author, "")</span>
 
         <span>Summary:</span>
         <div class="whitespace-pre-line break-word">{ maybeBlankText(ver.Summary) }</div>
@@ -80,8 +80,8 @@ templ verDetails(ver *db.Ver, author string, vote int) {
     </div>
 }
 
-templ verDetailsContainer(curVer *db.Ver, curVerAuthor string, selVer *uuid.UUID) {
-    <div id="ver" class="hidden">
+templ verDetailsContainer(curVer *db.Ver, curVerAuthor string, selVer *uuid.UUID, hidden bool) {
+    <div id="ver" if hidden { class="hidden" }>
         @formPad()
         <div id="ver-cur">
             @verDetails(curVer, curVerAuthor, -1)
@@ -159,16 +159,143 @@ templ verListStub() {
     </div>
 }
 
-templ verListHead(docID uuid.UUID) {
+templ verListHead(docID uuid.UUID, vordNum int32) {
     @formPad()
     <div class="flex flex-row items-center mb-1">
         <span hx-get="/ver/list" hx-include="body" hx-target="#ver-list" hx-trigger="click, load" class="hover:cursor-pointer">
             Versions
         </span>
 
-        if authToken, _ := api.GetValidAuthToken(ctx); authToken != nil {
-            <span class="flex-1"/>
-            <a href={ templ.SafeURL(fmt.Sprintf("/ver/new?doc=%v", docID)) } class="text-sm underline">New version</a>
+        if vordNum < 0 {
+            if authToken, _ := api.GetValidAuthToken(ctx); authToken != nil {
+                <span class="flex-1"/>
+                    <a href={ templ.SafeURL(fmt.Sprintf("/ver/new?doc=%v", docID)) } class="text-sm underline">New version</a>
+            }
         }
     </div>
+}
+
+// TODO: reduce the amount of pasta
+
+templ verViewButton(view string, active bool) {
+    {{
+        class := "px-2 hover:cursor-pointer"
+        if active {
+            class += " underline"
+        }
+    }}
+
+    <span id={ fmt.Sprintf("btn-%s", view) } class={ class } onclick={ templ.JSFuncCall("updateView", view) }>{ view }</span>
+}
+
+templ verViewButtons() {
+    @verViewButton("current", false)
+    |
+    @verViewButton("proposed", true)
+    |
+    @verViewButton("diff", false)
+}
+
+templ verViewContent(view string, content string) {
+    <div id={ "txt-" + view } class="h-124 overflow-y-scroll p-3 resize-y font-mono text-sm whitespace-pre-line break-all border border-gray-500">
+        { content }
+    </div>
+}
+
+templ verViewContainer(view string, active bool) {
+    <div id={ "cnt-" + view } if !active { class="hidden" }>
+        { children... }
+    </div>
+}
+
+templ verScript() {
+    <script>
+        const views = ['current', 'proposed', 'diff']
+
+        function updateView(selView) {
+            let curView = ''
+            let curHeight = 0
+            for (view of views) {
+                if (!document.querySelector('#cnt-' + view).classList.contains('hidden')) {
+                    curView = view
+                    curHeight = document.querySelector('#txt-' + view).offsetHeight
+                    break
+                }
+            }
+
+            if (selView == 'current') {
+                document.querySelector('#pnl-info').classList.remove('hidden')
+                document.querySelector('#pnl-form').classList.add('hidden')
+            } else {
+                document.querySelector('#pnl-info').classList.add('hidden')
+                document.querySelector('#pnl-form').classList.remove('hidden')
+            }
+
+            if (selView == 'diff') {
+                updateDiff(
+                    document.querySelector('#txt-diff'),
+                    document.querySelector('#txt-current').innerHTML,
+                    document.querySelector('#txt-proposed').value,
+                )
+            }
+
+            for (view of views) {
+                document.querySelector('#cnt-' + view).classList.add('hidden')
+                document.querySelector('#btn-' + view).classList.remove('underline')
+            }
+
+            document.querySelector('#cnt-' + selView).classList.remove('hidden')
+            document.querySelector('#txt-' + selView).style['height'] = curHeight + 'px'
+            document.querySelector('#btn-' + selView).classList.add('underline')
+        }
+    </script>
+}
+
+templ newVerPage(doc *db.Doc, docAuthor string, ver *db.Ver, verAuthor string) {
+    <form hx-post="" hx-target="#form-error" class="flex flex-row m-auto">
+        <div class="w-2xl">
+            <div class="mb-1">
+                View:
+                @verViewButtons()
+            </div>
+            @verViewContainer("current", false) {
+                @verViewContent("current", ver.Content)
+            }
+            @verViewContainer("proposed", true) {
+                <div class="hidden">
+                    @formLabel("Content", "content")
+                </div>
+                <textarea id="txt-proposed" name="content" class="block w-full h-124 p-3 resize-y font-mono text-sm break-all">
+                    { ver.Content }
+                </textarea>
+            }
+            @verViewContainer("diff", false) {
+                @verViewContent("diff", "")
+            }
+        </div>
+        <span class="w-4"/>
+        <div class="w-md">
+            <div id="pnl-info" class="hidden">
+                @docIDField(doc.ID)
+                <div class="mb-1">
+                    { doc.Title }
+                </div>
+                @docDescription(doc.Description)
+                @docDetailsContainer(doc, docAuthor, false)
+                @verDetailsContainer(ver, verAuthor, nil, false)
+            </div>
+            <div id="pnl-form">
+                @formLabel("Summary", "summary")
+                <textarea id="summary" name="summary" class="block w-full h-30 p-3 resize-y text-sm break-all"/>
+                @formPad()
+                @formError()
+                @formPad()
+                @formSubmit()
+            </div>
+        </div>
+    </form>
+}
+
+templ NewVerPage(doc *db.Doc, docAuthor string, ver *db.Ver, verAuthor string) {
+    @PageWrapper("Hawloom - New Version", PageHeader(), utilsScript(), verScript(), newVerPage(doc, docAuthor, ver, verAuthor))
 }

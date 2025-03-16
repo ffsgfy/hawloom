@@ -27,10 +27,11 @@ func (sc *StateCtx) CreateVer(params *CreateVerParams) (*db.Ver, error) {
 	var ver *db.Ver
 
 	if err = sc.Tx(func(sc *StateCtx) error {
-		if res, err := sc.Queries.LockVord(sc.Ctx, params.DocID); err != nil {
+		if _, err := sc.Queries.LockVord(sc.Ctx, params.DocID); err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return ErrNoVordExists
+			}
 			return err
-		} else if res == 0 {
-			return ErrNoVordExists
 		}
 
 		ver, err = sc.Queries.CreateVer(sc.Ctx, &db.CreateVerParams{

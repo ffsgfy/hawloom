@@ -165,3 +165,54 @@ func HandleVerList(s *api.State) echo.HandlerFunc {
 		return c.HTML(http.StatusOK, content)
 	}
 }
+
+type newVerParams struct {
+	DocID uuid.UUID `query:"doc"`
+}
+
+func HandleNewVer(s *api.State) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		var params newVerParams
+		if err := c.Bind(&params); err != nil {
+			return err
+		}
+
+		sc := s.Ctx(c.Request().Context())
+		row, err := sc.Queries.FindCurrentVer(sc.Ctx, params.DocID)
+		if err != nil {
+			return err
+		}
+
+		content, err := ui.Render(sc.Ctx, ui.NewVerPage(&row.Doc, row.DocAuthor, &row.Ver, row.VerAuthor))
+		if err != nil {
+			return err
+		}
+		return c.HTML(http.StatusOK, content)
+	}
+}
+
+type newVerPostParams struct {
+	DocID   uuid.UUID `form:"doc-id"`
+	Content string    `form:"content"`
+	Summary string    `form:"summary"`
+}
+
+func HandleNewVerPost(s *api.State) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		var params newVerPostParams
+		if err := c.Bind(&params); err != nil {
+			return err
+		}
+
+		sc := s.Ctx(c.Request().Context())
+		if ver, err := sc.CreateVer(&api.CreateVerParams{
+			DocID:   params.DocID,
+			Summary: params.Summary,
+			Content: params.Content,
+		}); err != nil {
+			return err
+		} else {
+			return handleRedirect(c, fmt.Sprintf("/doc/%v?ver=%v", ver.Doc, ver.ID))
+		}
+	}
+}

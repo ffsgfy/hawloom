@@ -117,18 +117,17 @@ func (q *Queries) FindVordForCommitByDocID(ctx context.Context, doc uuid.UUID) (
 	return &i, err
 }
 
-const lockVord = `-- name: LockVord :execrows
+const lockVord = `-- name: LockVord :one
 SELECT 1 FROM vord
 WHERE doc = $1 AND num = -1
 FOR SHARE
 `
 
-func (q *Queries) LockVord(ctx context.Context, doc uuid.UUID) (int64, error) {
-	result, err := q.db.Exec(ctx, lockVord, doc)
-	if err != nil {
-		return 0, err
-	}
-	return result.RowsAffected(), nil
+func (q *Queries) LockVord(ctx context.Context, doc uuid.UUID) (int32, error) {
+	row := q.db.QueryRow(ctx, lockVord, doc)
+	var column_1 int32
+	err := row.Scan(&column_1)
+	return column_1, err
 }
 
 const updateVord = `-- name: UpdateVord :exec

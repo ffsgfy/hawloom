@@ -52,5 +52,58 @@ templ utilsScript() {
                 elem.classList.add(cls)
             }
         }
+
+        // TODO: better tokenization
+        function splitContent(content) {
+            let tokens = []
+            let lines = content.split('\n')
+            for (line of lines) {
+                for (token of line.split(/\s+/)) {
+                    if (token.length > 0) {
+                        tokens.push(token)
+                    }
+                }
+                tokens.push('\n')
+            }
+            return tokens
+        }
+
+        function updateDiff(diffElem, contentLeft, contentRight) {
+            let tokLeft = splitContent(contentLeft)
+            let tokRight = splitContent(contentRight)
+            let diff = patienceDiff(tokLeft, tokRight)
+
+            diffElem.textContent = ''
+            let lastTok = null
+            let lastSign = 0
+
+            for (line of diff.lines) {
+                let sign = 0
+                if (line.aIndex < 0) {
+                    sign = 1
+                }
+                if (line.bIndex < 0) {
+                    sign = -1
+                }
+
+                let tok = lastTok
+                if (tok == null || sign != lastSign) {
+                    tok = document.createElement('span')
+                    if (sign > 0) {
+                        tok.classList.add('bg-green-100')
+                    } else if (sign < 0) {
+                        tok.classList.add('bg-red-100')
+                    }
+                    diffElem.append(tok)
+                    diffElem.append(' ')
+                } else {
+                    tok.textContent += ' '
+                }
+
+                tok.textContent += line.line
+                lastTok = tok
+                lastSign = sign
+            }
+        }
     </script>
 }
