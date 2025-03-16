@@ -324,9 +324,13 @@ templ docScript() {
             }
         }
 
-        document.addEventListener('htmx:afterRequest', function(ev) {
-            if (ev.detail.target.id == 'ver-sel') {
+        document.addEventListener('htmx:afterRequest', function(evt) {
+            let target = evt.detail.target.id
+            if (target == 'ver-sel') {
                 updateView('alternate')
+            } else if (target == 'btn-vote-unvote') {
+                htmx.trigger('#btn-versions', 'click', {})
+                htmx.ajax('GET', '/ver/' + document.querySelector('#ver-sel-id').value, '#ver-sel')
             }
         })
     </script>

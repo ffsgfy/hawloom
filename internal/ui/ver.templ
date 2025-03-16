@@ -76,7 +76,7 @@ templ verButtonsStub() {
     </span>
 }
 
-templ verDetails(ver *db.Ver, author string) {
+templ verDetails(ver *db.Ver, author string, hasVote bool) {
     <div class="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-sm pl-4 border-l border-l-gray-500">
         <span>Version:</span>
         <span>{ formatUUID(ver.ID, false) }</span>
@@ -88,7 +88,7 @@ templ verDetails(ver *db.Ver, author string) {
         <div class="whitespace-pre-line break-word">{ maybeBlankText(ver.Summary) }</div>
 
         <span>Votes:</span>
-        <span>{ fmt.Sprintf("%d", ver.Votes) }</span>
+        <span if hasVote { class="underline" }>{ fmt.Sprintf("%d", ver.Votes) }</span>
     </div>
 }
 
@@ -96,7 +96,7 @@ templ verDetailsContainer(curVer *db.Ver, curVerAuthor string, selVer *uuid.UUID
     <div id="ver" if hidden { class="hidden" }>
         @formPad()
         <div id="ver-cur">
-            @verDetails(curVer, curVerAuthor)
+            @verDetails(curVer, curVerAuthor, false)
         </div>
         <div id="ver-sel" class="hidden">
             if selVer != nil {
@@ -107,7 +107,7 @@ templ verDetailsContainer(curVer *db.Ver, curVerAuthor string, selVer *uuid.UUID
 }
 
 templ VerFragment(ver *db.Ver, author string, hasVote, canVote bool) {
-    @verDetails(ver, author)
+    @verDetails(ver, author, hasVote)
     @docViewContent("selected", ver.Content)
     @verSelIDField(&ver.ID)
     @VerVoteUnvoteButton(ver.ID, hasVote, canVote)
@@ -174,7 +174,7 @@ templ verListStub() {
 templ verListHead(docID uuid.UUID, vordNum int32) {
     @formPad()
     <div class="flex flex-row items-center mb-1">
-        <span hx-get="/ver/list" hx-include="body" hx-target="#ver-list" hx-trigger="click, load" class="hover:cursor-pointer">
+        <span id="btn-versions" hx-get="/ver/list" hx-include="body" hx-target="#ver-list" hx-trigger="click, load" class="hover:cursor-pointer">
             Versions
         </span>
 
