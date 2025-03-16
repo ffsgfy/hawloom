@@ -16,7 +16,7 @@ import (
 
 func HandleNewDoc(s *api.State) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		if _, err := api.GetValidAuthToken(c.Request().Context()); err != nil {
+		if authToken, _ := api.GetValidAuthToken(c.Request().Context()); authToken == nil {
 			return handleRedirect(c, "/")
 		}
 

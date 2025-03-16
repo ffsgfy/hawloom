@@ -8,7 +8,7 @@ templ userPage(account *db.Account, self bool, docRows []*DocRow) {
     <div class="min-w-1/2 max-w-7/8 m-auto">
         <div class="text-lg">
             User
-            @accountName(account.Name, "underline px-2 py-1")
+            @accountName(account.Name, "underline px-2")
         </div>
         @formPad()
         <div class="pl-4 border-l border-l-gray-500">

@@ -3,6 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -60,6 +61,22 @@ func HandleVer(s *api.State) echo.HandlerFunc {
 			return err
 		}
 		return c.HTML(http.StatusOK, content)
+	}
+}
+
+func HandleVerDelete(s *api.State) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		var params verParams
+		if err := c.Bind(&params); err != nil {
+			return err
+		}
+
+		sc := s.Ctx(c.Request().Context())
+		if docID, err := sc.DeleteVer(params.VerID); err != nil {
+			return err
+		} else {
+			return handleRedirect(c, fmt.Sprintf("/doc/%v", docID))
+		}
 	}
 }
 

@@ -43,21 +43,21 @@ func PageHeader() templ.Component {
 		}
 		ctx = templ.ClearChildren(ctx)
 		authToken, _ := api.GetValidAuthToken(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"flex flex-row items-center w-full border-b border-b-gray-500\"><a href=\"/\" class=\"text-lg font-mono px-2 py-1\">Hawloom</a> <span class=\"flex-1\"></span> ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"flex flex-row items-center py-1 w-full border-b border-b-gray-500\"><a href=\"/\" class=\"text-lg font-mono px-2\">Hawloom</a> <span class=\"flex-1\"></span> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if authToken == nil {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<a href=\"/auth/login\" class=\"px-2 py-1\">Login</a> | <a href=\"/auth/register\" class=\"px-2 py-1\">Register</a>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<a href=\"/auth/login\" class=\"px-2\">Login</a> | <a href=\"/auth/register\" class=\"px-2\">Register</a>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = accountName(authToken.AccountName, "underline px-2 py-1").Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = accountName(authToken.AccountName, "underline px-2").Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, " | <a href=\"/doc/new\" class=\"px-2 py-1\">New document</a> | <a href=\"/auth/logout\" hx-get=\"/auth/logout\" class=\"px-2 py-1\">Logout</a>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, " | <a href=\"/doc/new\" class=\"px-2\">New document</a> | <a href=\"/auth/logout\" hx-get=\"/auth/logout\" class=\"px-2\">Logout</a>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

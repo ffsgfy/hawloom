@@ -57,10 +57,10 @@ func (sc *StateCtx) CreateVer(params *CreateVerParams) (*db.Ver, error) {
 	return ver, nil
 }
 
-func (sc *StateCtx) DeleteVer(id uuid.UUID) error {
+func (sc *StateCtx) DeleteVer(id uuid.UUID) (uuid.UUID, error) {
 	authToken, err := GetValidAuthToken(sc.Ctx)
 	if err != nil {
-		return err
+		return uuid.UUID{}, err
 	}
 
 	var docID uuid.UUID
@@ -85,7 +85,7 @@ func (sc *StateCtx) DeleteVer(id uuid.UUID) error {
 
 		return sc.Queries.DeleteVer(sc.Ctx, id)
 	}); err != nil {
-		return err
+		return uuid.UUID{}, err
 	}
 
 	ctxlog.Info(
@@ -95,5 +95,5 @@ func (sc *StateCtx) DeleteVer(id uuid.UUID) error {
 		"ver_id", id,
 	)
 
-	return nil
+	return docID, nil
 }

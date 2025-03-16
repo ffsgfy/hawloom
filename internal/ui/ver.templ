@@ -5,6 +5,7 @@ import (
 
     "github.com/google/uuid"
 
+    "github.com/ffsgfy/hawloom/internal/api"
     "github.com/ffsgfy/hawloom/internal/db"
 )
 
@@ -29,15 +30,38 @@ templ VerVoteUnvoteButton(verID uuid.UUID, hasVote bool) {
             url = fmt.Sprintf("/ver/%v/vote", verID)
             buttonText = "Vote"
         }
+
+        class := "px-2"
+        if authToken, _ := api.GetValidAuthToken(ctx); authToken != nil {
+            class += " hover:cursor-pointer"
+        } else {
+            class += " text-gray-500"
+        }
     }}
 
-    <span hx-post={ url } class="underline hover:cursor-pointer">{ buttonText }</span>
+    <span id="btn-vote-unvote" hx-post={ url } hx-swap-oob="true" class={ class }>{ buttonText }</span>
 }
 
-templ VerFragment(ver *db.Ver, author string, vote int) {
-    @verDetails(ver, author, vote)
-    @docViewContent("selected", ver.Content)
-    @verSelIDField(&ver.ID)
+templ verDeleteButton(ver *db.Ver) {
+    {{
+        class := "px-2"
+        if authToken, _ := api.GetValidAuthToken(ctx); authToken != nil && authToken.AccountID == ver.CreatedBy {
+            class += " hover:cursor-pointer"
+        } else {
+            class += " text-gray-500"
+        }
+    }}
+
+    <span id="btn-delete" hx-delete={ fmt.Sprintf("/ver/%v", ver.ID) } hx-swap-oob="true" class={ class }>Delete</span>
+}
+
+templ verButtonsStub() {
+    {{ var dummyVer db.Ver }}
+    <span id="btns-ver" class="hidden">
+        @VerVoteUnvoteButton(dummyVer.ID, false)
+        |
+        @verDeleteButton(&dummyVer)
+    </span>
 }
 
 templ verDetails(ver *db.Ver, author string, vote int) {
@@ -52,13 +76,7 @@ templ verDetails(ver *db.Ver, author string, vote int) {
         <div class="whitespace-pre-line break-word">{ maybeBlankText(ver.Summary) }</div>
 
         <span>Votes:</span>
-        <div class="flex flex-row">
-            { fmt.Sprintf("%d", ver.Votes) }
-            <span class="flex-1"/>
-            if ver.VordNum < 0 && vote >= 0 {
-                @VerVoteUnvoteButton(ver.ID, vote > 0)
-            }
-        </div>
+        <span>{ fmt.Sprintf("%d", ver.Votes) }</span>
     </div>
 }
 
@@ -74,6 +92,14 @@ templ verDetailsContainer(curVer *db.Ver, curVerAuthor string, selVer *uuid.UUID
             }
         </div>
     </div>
+}
+
+templ VerFragment(ver *db.Ver, author string, vote int) {
+    @verDetails(ver, author, vote)
+    @docViewContent("selected", ver.Content)
+    @verSelIDField(&ver.ID)
+    @VerVoteUnvoteButton(ver.ID, vote > 0)
+    @verDeleteButton(ver)
 }
 
 type VerRow struct {
@@ -133,9 +159,16 @@ templ verListStub() {
     </div>
 }
 
-templ verListHead() {
+templ verListHead(docID uuid.UUID) {
     @formPad()
-    <div hx-get="/ver/list" hx-include="body" hx-target="#ver-list" hx-trigger="click, load" class="mb-1 hover:cursor-pointer">
-        Versions
+    <div class="flex flex-row items-center mb-1">
+        <span hx-get="/ver/list" hx-include="body" hx-target="#ver-list" hx-trigger="click, load" class="hover:cursor-pointer">
+            Versions
+        </span>
+
+        if authToken, _ := api.GetValidAuthToken(ctx); authToken != nil {
+            <span class="flex-1"/>
+            <a href={ templ.SafeURL(fmt.Sprintf("/ver/new?doc=%v", docID)) } class="text-sm underline">New version</a>
+        }
     </div>
 }

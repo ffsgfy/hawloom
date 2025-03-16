@@ -30,7 +30,7 @@ templ newDocPage() {
             @formPad()
             <div class="pl-4 border-l border-l-gray-500">
                 <div class="grid grid-cols-[repeat(2,_max-content)] gap-x-4 gap-y-2 items-center text-sm">
-                    @formLabel("Voting round duration:", "vduration")
+                    @formLabel("Voting round:", "vduration")
                     <span>
                         <input type="number" id="vduration" name="vduration" class="w-18 p-1 mr-1 text-sm" value="120"/> seconds
                     </span>
@@ -66,11 +66,14 @@ templ NewDocPage() {
 
 templ docViewButton(view string, active, dummy bool) {
     {{
-        class := "px-2 py-1 hover:cursor-pointer"
+        class := "px-2"
         if active {
             class += " underline"
         } else if dummy {
             class += " text-gray-500"
+        }
+        if !dummy {
+            class += " hover:cursor-pointer"
         }
     }}
 
@@ -111,7 +114,7 @@ templ docViewContainer(view string, content string, active bool) {
 }
 
 templ docDetailsButton(subj string) {
-    <span id={ fmt.Sprintf("dbt-%s", subj) } class="px-2 py-1 hover:cursor-pointer" onclick={ templ.JSFuncCall("toggleDetails", subj) }>{ subj }</span>
+    <span id={ fmt.Sprintf("btn-%s", subj) } class="px-2 hover:cursor-pointer" onclick={ templ.JSFuncCall("toggleDetails", subj) }>{ subj }</span>
 }
 
 templ docDetailsButtons() {
@@ -148,7 +151,7 @@ templ docDetailsContainer(doc *db.Doc, docAuthor string) {
             <span>Author:</span>
             @accountName(docAuthor, "")
 
-            <span>Voting round duration:</span>
+            <span>Voting round:</span>
             <span>{ fmt.Sprintf("%d seconds", doc.VordDuration) }</span>
 
             <span>Voting mode:</span>
@@ -309,9 +312,11 @@ templ docScript() {
             if (selView == 'current') {
                 document.querySelector('#ver-cur').classList.remove('hidden')
                 document.querySelector('#ver-sel').classList.add('hidden')
+                document.querySelector('#btns-ver').classList.add('hidden')
             } else {
                 document.querySelector('#ver-cur').classList.add('hidden')
                 document.querySelector('#ver-sel').classList.remove('hidden')
+                document.querySelector('#btns-ver').classList.remove('hidden')
             }
 
             if (selView == 'diff') {
@@ -329,7 +334,7 @@ templ docScript() {
         }
 
         function toggleDetails(subj) {
-            toggleClass('#dbt-' + subj, 'underline')
+            toggleClass('#btn-' + subj, 'underline')
             if (subj == 'document') {
                 toggleClass('#doc', 'hidden')
             } else if (subj == 'version') {
@@ -351,11 +356,24 @@ templ docPage(doc *db.Doc, docAuthor string, curVer *db.Ver, curVerAuthor string
             <div class="flex flex-row items-center mb-1">
                 View:
                 @docViewButtons()
+
+                {{
+                    active := false
+                    if vord.Num < 0 {
+                        if authToken, _ := api.GetValidAuthToken(ctx); authToken != nil {
+                            active = true
+                        }
+                    }
+
+                    class := "text-sm"
+                    if !active {
+                        class += " hidden"
+                    }
+                }}
                 <span class="flex-1"/>
-                if authToken, _ := api.GetValidAuthToken(ctx); authToken != nil {
-                    <a href={ templ.SafeURL(fmt.Sprintf("/ver/new?doc=%v", doc.ID)) }
-                        class="text-sm underline">New version</a>
-                }
+                <span class={ class }>
+                    @verButtonsStub()
+                </span>
             </div>
             @docViewContainer("current", curVer.Content, true)
             @docViewContainer("selected", "", false)
@@ -384,7 +402,7 @@ templ docPage(doc *db.Doc, docAuthor string, curVer *db.Ver, curVerAuthor string
             @docDetailsContainer(doc, docAuthor)
             @verDetailsContainer(curVer, curVerAuthor, selVer)
 
-            @verListHead()
+            @verListHead(doc.ID)
             @verListStub()
         </div>
     </div>
