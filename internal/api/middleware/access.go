@@ -44,7 +44,7 @@ func LogAccess(next echo.HandlerFunc) echo.HandlerFunc {
 			tags := make([]any, 0, 16)
 			tags = append(
 				tags,
-				"req_path", c.Path(),
+				"req_url", req.URL,
 				"res_status", res.Status,
 				"res_size", res.Size,
 				"dt", durationMilli,
