@@ -264,7 +264,16 @@ templ verScript() {
 }
 
 templ newVerPage(doc *db.Doc, docAuthor string, ver *db.Ver, verAuthor string) {
-    <form hx-post="" hx-target="#form-error" class="flex flex-row m-auto">
+    <div class="text-center text-lg">
+        New Version
+    </div>
+    <div class="text-center text-sm">
+        for document { formatUUID(doc.ID, false) }
+    </div>
+    @formPad()
+    @formPad()
+
+    <form hx-post="" hx-target="#form-error" class="flex flex-row">
         <div class="w-2xl">
             <div class="mb-1">
                 View:
@@ -309,5 +318,12 @@ templ newVerPage(doc *db.Doc, docAuthor string, ver *db.Ver, verAuthor string) {
 }
 
 templ NewVerPage(doc *db.Doc, docAuthor string, ver *db.Ver, verAuthor string) {
-    @PageWrapper("Hawloom - New Version", PageHeader(), utilsScript(), verScript(), newVerPage(doc, docAuthor, ver, verAuthor))
+    @pageWrapper("Hawloom - New Version") {
+        @pageHeader()
+        @utilsScript()
+        @verScript()
+        @pageContent(){
+            @newVerPage(doc, docAuthor, ver, verAuthor)
+        }
+    }
 }

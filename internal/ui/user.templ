@@ -5,31 +5,34 @@ import (
 )
 
 templ userPage(account *db.Account, self bool, docRows []*DocRow) {
-    <div class="min-w-1/2 max-w-7/8 m-auto">
-        <div class="text-lg">
-            User
-            @accountName(account.Name, "underline px-2")
-        </div>
-        @formPad()
-        <div class="pl-4 border-l border-l-gray-500">
-            Registered:
-            { account.CreatedAt.Format("2006-01-02 15:04:05") }
-        </div>
-        @formPad()
-        @formPad()
-
-        {{
-            var head string
-            if self {
-                head = "All documents"
-            } else {
-                head = "Public documents"
-            }
-        }}
-        @docList(head, docRows, false)
+    <div class="text-lg">
+        User
+        @accountName(account.Name, "underline px-2")
     </div>
+    @formPad()
+    <div class="pl-4 border-l border-l-gray-500">
+        Registered:
+        { account.CreatedAt.Format("2006-01-02 15:04:05") }
+    </div>
+    @formPad()
+    @formPad()
+
+    {{
+        var head string
+        if self {
+            head = "All documents"
+        } else {
+            head = "Public documents"
+        }
+    }}
+    @docList(head, docRows, false)
 }
 
 templ UserPage(account *db.Account, self bool, docRows []*DocRow) {
-    @PageWrapper("Hawloom - " + account.Name, PageHeader(), userPage(account, self, docRows))
+    @pageWrapper("Hawloom - " + account.Name) {
+        @pageHeader()
+        @pageContent() {
+            @userPage(account, self, docRows)
+        }
+    }
 }

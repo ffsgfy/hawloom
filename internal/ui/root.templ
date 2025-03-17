@@ -13,7 +13,7 @@ func Render(ctx context.Context, component templ.Component) (string, error) {
 	return buffer.String(), err
 }
 
-templ PageHeader() {
+templ pageHeader() {
     {{ authToken, _ := api.GetValidAuthToken(ctx) }}
 
     <div class="flex flex-row items-center py-1 w-full border-b border-b-gray-500">
@@ -35,7 +35,7 @@ templ PageHeader() {
     </div>
 }
 
-templ PageWrapper(title string, children ...templ.Component) {
+templ pageWrapper(title string) {
 	<!DOCTYPE html>
 	<html lang="en">
 		<head>
@@ -48,9 +48,13 @@ templ PageWrapper(title string, children ...templ.Component) {
             <title>{ title }</title>
 		</head>
 		<body class="flex flex-col min-h-screen">
-			for _, child := range children {
-				@child
-			}
+			{ children... }
 		</body>
 	</html>
+}
+
+templ pageContent() {
+    <div class="flex flex-col m-auto">
+        { children... }
+    </div>
 }

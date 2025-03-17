@@ -6,8 +6,13 @@ templ authFormField(label, name, inputType string) {
     @formPad()
 }
 
-templ authForm() {
-    <form hx-post="" hx-target="#form-error" class="m-auto min-w-3xs">
+templ authForm(title string) {
+    <div class="text-center text-lg">
+        { title }
+    </div>
+    @formPad()
+
+    <form hx-post="" hx-target="#form-error" class="min-w-3xs">
         { children... }
         @formError()
         @formPad()
@@ -16,18 +21,23 @@ templ authForm() {
 }
 
 templ loginPage() {
-    @authForm() {
+    @authForm("Login") {
         @authFormField("Account name", "name", "text")
         @authFormField("Password", "password", "password")
     }
 }
 
 templ LoginPage() {
-    @PageWrapper("Hawloom - Login", PageHeader(), loginPage())
+    @pageWrapper("Hawloom - Login") {
+        @pageHeader()
+        @pageContent() {
+            @loginPage()
+        }
+    }
 }
 
 templ registerPage() {
-    @authForm() {
+    @authForm("Register") {
         @authFormField("Account name", "name", "text")
         @authFormField("Password", "password", "password")
         @authFormField("Retype password", "password-re", "password")
@@ -35,5 +45,10 @@ templ registerPage() {
 }
 
 templ RegisterPage() {
-    @PageWrapper("Hawloom - Register", PageHeader(), registerPage())
+    @pageWrapper("Hawloom - Register") {
+        @pageHeader()
+        @pageContent() {
+            @registerPage()
+        }
+    }
 }

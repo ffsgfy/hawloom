@@ -1,11 +1,14 @@
 package ui
 
 templ mainPage(docRows []*DocRow) {
-    <div class="min-w-1/2 max-w-7/8 m-auto">
-        @docList("All public documents", docRows, true)
-    </div>
+    @docList("All public documents", docRows, true)
 }
 
 templ MainPage(docRows []*DocRow) {
-    @PageWrapper("Hawloom - Main", PageHeader(), mainPage(docRows))
+    @pageWrapper("Hawloom - Main") {
+        @pageHeader()
+        @pageContent() {
+            @mainPage(docRows)
+        }
+    }
 }
