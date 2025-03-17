@@ -8,9 +8,9 @@ import (
 )
 
 func Render(ctx context.Context, component templ.Component) (string, error) {
-	buffer := bytes.Buffer{}
-	err := component.Render(ctx, &buffer)
-	return buffer.String(), err
+    buffer := bytes.Buffer{}
+    err := component.Render(ctx, &buffer)
+    return buffer.String(), err
 }
 
 templ pageHeader() {
@@ -36,9 +36,9 @@ templ pageHeader() {
 }
 
 templ pageWrapper(title string) {
-	<!DOCTYPE html>
-	<html lang="en">
-		<head>
+    <!DOCTYPE html>
+    <html lang="en">
+        <head>
             <meta charset="UTF-8"/>
             <meta name="viewport" content="width=device-width, initial-scale=1"/>
             <link href="/static/style.css" rel="stylesheet"/>
@@ -46,11 +46,11 @@ templ pageWrapper(title string) {
             <script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.js" integrity="sha384-oeUn82QNXPuVkGCkcrInrS1twIxKhkZiFfr2TdiuObZ3n3yIeMiqcRzkIcguaof1" crossorigin="anonymous"></script>
             <script src="https://cdn.jsdelivr.net/gh/jonTrent/PatienceDiff/PatienceDiff.js" crossorigin="anonymous"></script>
             <title>{ title }</title>
-		</head>
-		<body class="flex flex-col min-h-screen">
-			{ children... }
-		</body>
-	</html>
+        </head>
+        <body class="flex flex-col min-h-screen">
+            { children... }
+        </body>
+    </html>
 }
 
 templ pageContent() {

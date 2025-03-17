@@ -186,19 +186,27 @@ templ docVordNumField(vord *db.Vord) {
     <input type="number" id="vord-num" name="vord-num" class="hidden" value={ fmt.Sprint(vord.Num) }/>
 }
 
-templ docVordNumArrow(docID uuid.UUID, vordNum int32, right bool) {
-    {{
-        arrow := "<"
-        if right {
-            arrow = ">"
-        }
-    }}
+func docVordNumArrow(right bool) string {
+    if right {
+        return ">"
+    }
+    return "<"
+}
 
-    <a href={ templ.SafeURL(fmt.Sprintf("/doc/%v/%d", docID, vordNum)) } class="px-1 hover:cursor-pointer">{ arrow }</a>
+templ docVordNumArrowButton(docID uuid.UUID, vordNum int32, right bool) {
+    <a href={ templ.SafeURL(fmt.Sprintf("/doc/%v/%d", docID, vordNum)) } class="px-1 hover:cursor-pointer">
+        { docVordNumArrow(right) }
+    </a>
+}
+
+templ docVordNumArrowDummy(right bool) {
+    <span class="px-1 text-gray-500">
+        { docVordNumArrow(right) }
+    </span>
 }
 
 templ docVordNum(vordNum int32) {
-    <span class="underline px-1">{ fmt.Sprint(vordNum) }</span>
+    <span class="px-1">{ fmt.Sprint(vordNum) }</span>
 }
 
 func docVordExtensionReason(flags api.VordFlags) string {
@@ -243,14 +251,17 @@ templ docVordDisplay(curVer *db.Ver, vord *db.Vord) {
         Round:
         <span class="w-1"/>
         if vord.Num < 0 {
-            @docVordNumArrow(curVer.Doc, curVer.VordNum, false)
+            @docVordNumArrowButton(curVer.Doc, curVer.VordNum, false)
             @docVordNum(curVer.VordNum + 1)
+            @docVordNumArrowDummy(true)
         } else {
             if vord.Num > 0 {
-                @docVordNumArrow(curVer.Doc, vord.Num - 1, false)
+                @docVordNumArrowButton(curVer.Doc, vord.Num - 1, false)
+            } else {
+                @docVordNumArrowDummy(false)
             }
             @docVordNum(vord.Num)
-            @docVordNumArrow(curVer.Doc, vord.Num + 1, true)
+            @docVordNumArrowButton(curVer.Doc, vord.Num + 1, true)
         }
 
         <span class="flex-1"/>
@@ -445,10 +456,10 @@ templ DocPage(doc *db.Doc, docAuthor string, curVer *db.Ver, curVerAuthor string
 }
 
 type DocRow struct {
-	ID          uuid.UUID
-	Title       string
-	Description string
-	Author      string
+    ID          uuid.UUID
+    Title       string
+    Description string
+    Author      string
 }
 
 templ docListRow(docRow *DocRow, withAuthor bool) {
