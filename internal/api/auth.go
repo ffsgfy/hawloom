@@ -53,17 +53,26 @@ func (sc *StateCtx) CreateAuthKey() (*AuthKey, error) {
 		return nil, err
 	}
 
+	ctxlog.Info(sc.Ctx, "created new key", "key_id", key.ID)
+
 	return (*AuthKey)(key), nil
 }
 
-func (sc *StateCtx) LoadAuthKeys(required bool) error {
+func (sc *StateCtx) LoadAuthKeys(createFirst bool) error {
 	keys, err := sc.Queries.FindKeys(sc.Ctx)
 	if err != nil {
 		return err
 	}
 
-	if required && len(keys) == 0 {
-		return errors.New("no keys in db")
+	if len(keys) == 0 {
+		if !createFirst {
+			return ErrNoKeys
+		}
+		if key, err := sc.CreateAuthKey(); err != nil {
+			return fmt.Errorf("failed to create first key: %w", err)
+		} else {
+			keys = append(keys, (*db.Key)(key))
+		}
 	}
 
 	sc.Auth.Lock.Lock()

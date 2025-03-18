@@ -17,18 +17,19 @@
         "cookie": "auth"
     },
     "account": {
-        "name_min_length": 4,
+        "name_min_length": 3,
         "name_max_length": 36,
         "password_min_length": 6,
         "password_max_length": 48
     },
     "doc": {
-        "title_min_length": 3,
+        "title_min_length": 6,
         "title_max_length": 256
     },
     "vord": {
         "min_duration": 10,
         "duration_extension": 0.25,
+        "autocommit_tasks": 1,
         "autocommit_period": 2
     },
     "misc": {

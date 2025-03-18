@@ -20,10 +20,6 @@ docker compose up -d db
 # Apply migrations
 scripts/migrate.sh up
 
-# Create a key
-go build ./cmd/keyrot
-POSTGRES_HOST=127.0.0.1 ./keyrot -c config/dev.json
-
 # Start the server
 scripts/run.sh
 

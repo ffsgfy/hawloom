@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"os"
 
@@ -30,15 +31,14 @@ func main() {
 	}
 
 	if err := state.Ctx(ctx).LoadAuthKeys(false); err != nil {
-		ctxlog.Error2(ctx, "failed to load keys", err)
-		panic(err)
+		if !errors.Is(err, api.ErrNoKeys) {
+			ctxlog.Error2(ctx, "failed to load keys", err)
+			panic(err)
+		}
 	}
 
-	key, err := state.Ctx(ctx).CreateAuthKey()
-	if err != nil {
+	if _, err := state.Ctx(ctx).CreateAuthKey(); err != nil {
 		ctxlog.Error2(ctx, "failed to create new key", err)
 		panic(err)
 	}
-
-	ctxlog.Info(ctx, "created new key", "key_id", key.ID)
 }

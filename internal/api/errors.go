@@ -11,6 +11,7 @@ import (
 var (
 	ErrInvalidInput = echo.NewHTTPError(http.StatusBadRequest, "invalid input")
 	ErrInternal     = echo.NewHTTPError(http.StatusInternalServerError, "internal error")
+	ErrNoKeys       = echo.NewHTTPError(http.StatusInternalServerError, "no keys in db")
 	ErrUnauthorized = echo.NewHTTPError(http.StatusUnauthorized, "unauthorized")
 	ErrForbidden    = echo.NewHTTPError(http.StatusForbidden, "forbidden")
 

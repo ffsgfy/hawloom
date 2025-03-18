@@ -43,9 +43,12 @@ func main() {
 		panic(err)
 	}
 
-	autocommitCtx, autocommitCancel := context.WithCancel(ctx)
-	state.TasksCancel = append(state.TasksCancel, autocommitCancel)
-	go state.Ctx(autocommitCtx).RunAutocommit()
+	for i := range config.Vord.AutocommitTasks.V {
+		autocommitCtx, autocommitCancel := context.WithCancel(ctx)
+		autocommitCtx = ctxlog.With(autocommitCtx, "task_num", i)
+		state.TasksCancel = append(state.TasksCancel, autocommitCancel)
+		go state.Ctx(autocommitCtx).RunAutocommit()
+	}
 
 	e := echo.New()
 	e.HideBanner = true

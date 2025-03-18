@@ -50,6 +50,7 @@ type DocConfig struct {
 type VordConfig struct {
 	MinDuration       Value[int32]   `json:"min_duration"`
 	DurationExtension Value[float64] `json:"duration_extension"`
+	AutocommitTasks   Value[int]     `json:"autocommit_tasks"`
 	AutocommitPeriod  Value[int32]   `json:"autocommit_period"`
 }
 
