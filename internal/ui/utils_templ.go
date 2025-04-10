@@ -241,7 +241,7 @@ func maybeBlankText(text string) string {
 	return text
 }
 
-func utilsScript() templ.Component {
+func uploadButton(targetSelector, callback string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -262,7 +262,54 @@ func utilsScript() templ.Component {
 			templ_7745c5c3_Var12 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<script>\n        function toggleClass(selector, cls) {\n            let elem = document.querySelector(selector)\n            if (elem.classList.contains(cls)) {\n                elem.classList.remove(cls)\n            } else {\n                elem.classList.add(cls)\n            }\n        }\n\n        // TODO: better tokenization\n        function splitContent(content) {\n            let tokens = []\n            let lines = content.split('\\n')\n            for (line of lines) {\n                for (token of line.split(/\\s+/)) {\n                    if (token.length > 0) {\n                        tokens.push(token)\n                    }\n                }\n                tokens.push('\\n')\n            }\n            return tokens\n        }\n\n        function updateDiff(diffElem, contentLeft, contentRight) {\n            let tokLeft = splitContent(contentLeft)\n            let tokRight = splitContent(contentRight)\n            let diff = patienceDiff(tokLeft, tokRight)\n\n            diffElem.textContent = ''\n            let lastTok = null\n            let lastSign = 0\n\n            for (line of diff.lines) {\n                let sign = 0\n                if (line.aIndex < 0) {\n                    sign = 1\n                }\n                if (line.bIndex < 0) {\n                    sign = -1\n                }\n\n                let tok = lastTok\n                if (tok == null || sign != lastSign) {\n                    tok = document.createElement('span')\n                    if (sign > 0) {\n                        tok.classList.add('bg-green-100')\n                    } else if (sign < 0) {\n                        tok.classList.add('bg-red-100')\n                    }\n                    diffElem.append(tok)\n                    diffElem.append(' ')\n                } else {\n                    tok.textContent += ' '\n                }\n\n                tok.textContent += line.line\n                lastTok = tok\n                lastSign = sign\n            }\n        }\n    </script>")
+		onChange := templ.JSUnsafeFuncCall(fmt.Sprintf("uploadFile(event.target, '%s').then(() => { %s })", targetSelector, callback))
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<label for=\"upload\" class=\"px-2 text-sm hover:cursor-pointer\">Upload</label> ")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, onChange)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<input type=\"file\" id=\"upload\" class=\"sr-only\" onchange=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var13 templ.ComponentScript = onChange
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var13.Call)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+func utilsScript() templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var14 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var14 == nil {
+			templ_7745c5c3_Var14 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<script>\n        function toggleClass(selector, cls) {\n            let elem = document.querySelector(selector)\n            if (elem.classList.contains(cls)) {\n                elem.classList.remove(cls)\n            } else {\n                elem.classList.add(cls)\n            }\n        }\n\n        // TODO: better tokenization\n        function splitContent(content) {\n            let tokens = []\n            let lines = content.split('\\n')\n            for (line of lines) {\n                for (token of line.split(/\\s+/)) {\n                    if (token.length > 0) {\n                        tokens.push(token)\n                    }\n                }\n                tokens.push('\\n')\n            }\n            return tokens\n        }\n\n        function updateDiff(diffElem, contentLeft, contentRight) {\n            let tokLeft = splitContent(contentLeft)\n            let tokRight = splitContent(contentRight)\n            let diff = patienceDiff(tokLeft, tokRight)\n\n            diffElem.textContent = ''\n            let lastTok = null\n            let lastSign = 0\n\n            for (line of diff.lines) {\n                let sign = 0\n                if (line.aIndex < 0) {\n                    sign = 1\n                }\n                if (line.bIndex < 0) {\n                    sign = -1\n                }\n\n                let tok = lastTok\n                if (tok == null || sign != lastSign) {\n                    tok = document.createElement('span')\n                    if (sign > 0) {\n                        tok.classList.add('bg-green-100')\n                    } else if (sign < 0) {\n                        tok.classList.add('bg-red-100')\n                    }\n                    diffElem.append(tok)\n                    diffElem.append(' ')\n                } else {\n                    tok.textContent += ' '\n                }\n\n                tok.textContent += line.line\n                lastTok = tok\n                lastSign = sign\n            }\n        }\n\n        async function uploadFile(input, targetSelector) {\n            let target = document.querySelector(targetSelector)\n            let text = \"\"\n            if (input.files.length > 0) {\n                text = await input.files[0].text()\n            }\n            target.value = text\n        }\n    </script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

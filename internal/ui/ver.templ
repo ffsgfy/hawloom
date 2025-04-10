@@ -235,6 +235,14 @@ templ verScript() {
                 }
             }
 
+            if (selView == 'alternate') {
+                if (curView == 'current') {
+                    selView = 'proposed'
+                } else {
+                    selView = curView
+                }
+            }
+
             if (selView == 'current') {
                 document.querySelector('#pnl-info').classList.remove('hidden')
                 document.querySelector('#pnl-form').classList.add('hidden')
@@ -275,9 +283,11 @@ templ newVerPage(doc *db.Doc, docAuthor string, ver *db.Ver, verAuthor string) {
 
     <form hx-post="" hx-target="#form-error" class="flex flex-row">
         <div class="w-2xl">
-            <div class="mb-1">
+            <div class="flex flex-row items-center mb-1">
                 View:
                 @verViewButtons()
+                <span class="flex-1"/>
+                @uploadButton("#txt-proposed", "updateView('alternate')")
             </div>
             @verViewContainer("current", false) {
                 @verViewContent("current", ver.Content)

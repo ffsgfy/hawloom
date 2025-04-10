@@ -21,7 +21,11 @@ templ newDocPage() {
 
     <form hx-post="" hx-target="#form-error" class="flex flex-row">
         <div class="w-2xl">
-            @formLabel("Content", "content")
+            <div class="flex flex-row items-center mb-1">
+                <label for="content">Content</label>
+                <span class="flex-1"/>
+                @uploadButton("#content", "")
+            </div>
             <textarea id="content" name="content" class="block w-full h-124 p-3 resize-y font-mono text-sm break-all"/>
         </div>
         <span class="w-4"/>
@@ -68,6 +72,7 @@ templ newDocPage() {
 templ NewDocPage() {
     @pageWrapper("Hawloom - New Document") {
         @pageHeader()
+        @utilsScript()
         @pageContent() {
             @newDocPage()
         }

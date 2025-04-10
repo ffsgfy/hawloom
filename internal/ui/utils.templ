@@ -42,6 +42,13 @@ func maybeBlankText(text string) string {
     return text
 }
 
+templ uploadButton(targetSelector, callback string) {
+    {{ onChange := templ.JSUnsafeFuncCall(fmt.Sprintf("uploadFile(event.target, '%s').then(() => { %s })", targetSelector, callback)) }}
+
+    <label for="upload" class="px-2 text-sm hover:cursor-pointer">Upload</label>
+    <input type="file" id="upload" class="sr-only" onchange={ onChange }/>
+}
+
 templ utilsScript() {
     <script>
         function toggleClass(selector, cls) {
@@ -104,6 +111,15 @@ templ utilsScript() {
                 lastTok = tok
                 lastSign = sign
             }
+        }
+
+        async function uploadFile(input, targetSelector) {
+            let target = document.querySelector(targetSelector)
+            let text = ""
+            if (input.files.length > 0) {
+                text = await input.files[0].text()
+            }
+            target.value = text
         }
     </script>
 }
