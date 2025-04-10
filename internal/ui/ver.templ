@@ -9,7 +9,7 @@ import (
     "github.com/ffsgfy/hawloom/internal/db"
 )
 
-templ verSelIDField(verID *uuid.UUID) {
+templ verIDField(elemID string, verID *uuid.UUID) {
     {{
         value := ""
         if verID != nil {
@@ -17,7 +17,7 @@ templ verSelIDField(verID *uuid.UUID) {
         }
     }}
 
-    <input type="text" id="ver-sel-id" name="ver-id" class="hidden" hx-swap-oob="true" value={ value }/>
+    <input type="text" id={ elemID } class="hidden" hx-swap-oob="true" value={ value }/>
 }
 
 templ VerVoteUnvoteButton(verID uuid.UUID, hasVote, canVote bool) {
@@ -73,6 +73,7 @@ templ verButtonsStub() {
         @VerVoteUnvoteButton(dummyVer.ID, false, false)
         |
         @verDeleteButton(&dummyVer)
+        |
     </span>
 }
 
@@ -109,7 +110,7 @@ templ verDetailsContainer(curVer *db.Ver, curVerAuthor string, selVer *uuid.UUID
 templ VerFragment(ver *db.Ver, author string, hasVote, canVote bool) {
     @verDetails(ver, author, hasVote)
     @docViewContent("selected", ver.Content)
-    @verSelIDField(&ver.ID)
+    @verIDField("ver-sel-id", &ver.ID)
     @VerVoteUnvoteButton(ver.ID, hasVote, canVote)
     @verDeleteButton(ver)
 }

@@ -1285,7 +1285,7 @@ func docScript() templ.Component {
 			templ_7745c5c3_Var49 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 78, "<script>\n        const views = ['current', 'selected', 'diff']\n\n        function updateView(selView) {\n            if (document.querySelector('#ver-sel-id').value.length > 0) {\n                document.querySelector('#btns-normal').classList.remove('hidden')\n                document.querySelector('#btns-dummy').classList.add('hidden')\n            } else {\n                document.querySelector('#btns-normal').classList.add('hidden')\n                document.querySelector('#btns-dummy').classList.remove('hidden')\n            }\n\n            let curView = ''\n            let curHeight = 0\n            for (view of views) {\n                if (!document.querySelector('#cnt-' + view).classList.contains('hidden')) {\n                    curView = view\n                    curHeight = document.querySelector('#txt-' + view).offsetHeight\n                    break\n                }\n            }\n\n            if (selView == 'alternate') {\n                if (curView == 'current') {\n                    selView = 'selected'\n                } else {\n                    selView = curView\n                }\n            }\n\n            if (selView == 'current') {\n                document.querySelector('#ver-cur').classList.remove('hidden')\n                document.querySelector('#ver-sel').classList.add('hidden')\n                document.querySelector('#btns-ver').classList.add('hidden')\n            } else {\n                document.querySelector('#ver-cur').classList.add('hidden')\n                document.querySelector('#ver-sel').classList.remove('hidden')\n                document.querySelector('#btns-ver').classList.remove('hidden')\n            }\n\n            if (selView == 'diff') {\n                updateDiff(\n                    document.querySelector('#txt-diff'),\n                    document.querySelector('#txt-current').innerHTML,\n                    document.querySelector('#txt-selected').innerHTML,\n                )\n            }\n\n            for (view of views) {\n                document.querySelector('#cnt-' + view).classList.add('hidden')\n                document.querySelector('#btn-' + view).classList.remove('underline')\n            }\n\n            document.querySelector('#cnt-' + selView).classList.remove('hidden')\n            document.querySelector('#txt-' + selView).style['height'] = curHeight + 'px'\n            document.querySelector('#btn-' + selView).classList.add('underline')\n        }\n\n        function toggleDetails(subj) {\n            toggleClass('#btn-' + subj, 'underline')\n            if (subj == 'document') {\n                toggleClass('#doc', 'hidden')\n            } else if (subj == 'version') {\n                toggleClass('#ver', 'hidden')\n            }\n        }\n\n        document.addEventListener('htmx:afterRequest', function(evt) {\n            let target = evt.detail.target.id\n            if (target == 'ver-sel') {\n                updateView('alternate')\n            } else if (target == 'btn-vote-unvote') {\n                htmx.trigger('#btn-versions', 'click', {})\n                htmx.ajax('GET', '/ver/' + document.querySelector('#ver-sel-id').value, '#ver-sel')\n            }\n        })\n    </script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 78, "<script>\n        const views = ['current', 'selected', 'diff']\n\n        function getCurrentView() {\n            for (view of views) {\n                if (!document.querySelector('#cnt-' + view).classList.contains('hidden')) {\n                    return view\n                }\n            }\n            return views[0]\n        }\n\n        function updateView(selView) {\n            if (document.querySelector('#ver-sel-id').value.length > 0) {\n                document.querySelector('#btns-normal').classList.remove('hidden')\n                document.querySelector('#btns-dummy').classList.add('hidden')\n            } else {\n                document.querySelector('#btns-normal').classList.add('hidden')\n                document.querySelector('#btns-dummy').classList.remove('hidden')\n            }\n\n            let curView = getCurrentView()\n            let curHeight = document.querySelector('#txt-' + curView).offsetHeight\n\n            if (selView == 'alternate') {\n                if (curView == 'current') {\n                    selView = 'selected'\n                } else {\n                    selView = curView\n                }\n            }\n\n            if (selView == 'current') {\n                document.querySelector('#ver-cur').classList.remove('hidden')\n                document.querySelector('#ver-sel').classList.add('hidden')\n                document.querySelector('#btns-ver').classList.add('hidden')\n            } else {\n                document.querySelector('#ver-cur').classList.add('hidden')\n                document.querySelector('#ver-sel').classList.remove('hidden')\n                document.querySelector('#btns-ver').classList.remove('hidden')\n            }\n\n            if (selView == 'diff') {\n                updateDiff(\n                    document.querySelector('#txt-diff'),\n                    document.querySelector('#txt-current').innerHTML,\n                    document.querySelector('#txt-selected').innerHTML,\n                )\n            }\n\n            for (view of views) {\n                document.querySelector('#cnt-' + view).classList.add('hidden')\n                document.querySelector('#btn-' + view).classList.remove('underline')\n            }\n\n            document.querySelector('#cnt-' + selView).classList.remove('hidden')\n            document.querySelector('#txt-' + selView).style['height'] = curHeight + 'px'\n            document.querySelector('#btn-' + selView).classList.add('underline')\n        }\n\n        function downloadViewContent() {\n            let verIDSelector = '#ver-cur-id'\n            let textSelector = '#txt-current'\n\n            let curView = getCurrentView()\n            if (curView != 'current') {\n                verIDSelector = '#ver-sel-id'\n                textSelector = '#txt-selected'\n            }\n\n            let verIDElem = document.querySelector(verIDSelector)\n            if (!verIDElem || !verIDElem.value) {\n                return\n            }\n\n            let text = document.querySelector(textSelector).textContent\n            let link = document.createElement('a')\n            link.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text))\n            link.setAttribute('download', 'hawloom-' + verIDElem.value + '.txt')\n            link.classList.add('hidden')\n\n            document.body.appendChild(link)\n            link.click()\n            document.body.removeChild(link)\n        }\n\n        function toggleDetails(subj) {\n            toggleClass('#btn-' + subj, 'underline')\n            if (subj == 'document') {\n                toggleClass('#doc', 'hidden')\n            } else if (subj == 'version') {\n                toggleClass('#ver', 'hidden')\n            }\n        }\n\n        document.addEventListener('htmx:afterRequest', function(evt) {\n            let target = evt.detail.target.id\n            if (target == 'ver-sel') {\n                updateView('alternate')\n            } else if (target == 'btn-vote-unvote') {\n                htmx.trigger('#btn-versions', 'click', {})\n                htmx.ajax('GET', '/ver/' + document.querySelector('#ver-sel-id').value, '#ver-sel')\n            }\n        })\n    </script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1350,7 +1350,7 @@ func docPage(doc *db.Doc, docAuthor string, curVer *db.Ver, curVerAuthor string,
 		var templ_7745c5c3_Var52 string
 		templ_7745c5c3_Var52, templ_7745c5c3_Err = templ.JoinStringErrs(formatUUID(doc.ID, false))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `doc.templ`, Line: 388, Col: 35}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `doc.templ`, Line: 416, Col: 35}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var52))
 		if templ_7745c5c3_Err != nil {
@@ -1418,7 +1418,7 @@ func docPage(doc *db.Doc, docAuthor string, curVer *db.Ver, curVerAuthor string,
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 86, "</span></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 86, "</span> <span class=\"px-2 text-sm hover:cursor-pointer\" onclick=\"downloadViewContent()\">Download</span></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1450,7 +1450,11 @@ func docPage(doc *db.Doc, docAuthor string, curVer *db.Ver, curVerAuthor string,
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = verSelIDField(selVer).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = verIDField("ver-cur-id", &curVer.ID).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = verIDField("ver-sel-id", selVer).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1461,7 +1465,7 @@ func docPage(doc *db.Doc, docAuthor string, curVer *db.Ver, curVerAuthor string,
 		var templ_7745c5c3_Var55 string
 		templ_7745c5c3_Var55, templ_7745c5c3_Err = templ.JoinStringErrs(doc.Title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `doc.templ`, Line: 430, Col: 27}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `doc.templ`, Line: 461, Col: 27}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var55))
 		if templ_7745c5c3_Err != nil {
@@ -1658,7 +1662,7 @@ func docListRow(docRow *DocRow, withAuthor bool) templ.Component {
 		var templ_7745c5c3_Var61 string
 		templ_7745c5c3_Var61, templ_7745c5c3_Err = templ.JoinStringErrs(formatUUID(docRow.ID, true))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `doc.templ`, Line: 473, Col: 45}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `doc.templ`, Line: 504, Col: 45}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var61))
 		if templ_7745c5c3_Err != nil {
@@ -1671,7 +1675,7 @@ func docListRow(docRow *DocRow, withAuthor bool) templ.Component {
 		var templ_7745c5c3_Var62 string
 		templ_7745c5c3_Var62, templ_7745c5c3_Err = templ.JoinStringErrs(docRow.Title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `doc.templ`, Line: 477, Col: 26}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `doc.templ`, Line: 508, Col: 26}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var62))
 		if templ_7745c5c3_Err != nil {
@@ -1684,7 +1688,7 @@ func docListRow(docRow *DocRow, withAuthor bool) templ.Component {
 		var templ_7745c5c3_Var63 string
 		templ_7745c5c3_Var63, templ_7745c5c3_Err = templ.JoinStringErrs(maybeBlankText(docRow.Description))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `doc.templ`, Line: 480, Col: 48}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `doc.templ`, Line: 511, Col: 48}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var63))
 		if templ_7745c5c3_Err != nil {
@@ -1744,7 +1748,7 @@ func docList(head string, docRows []*DocRow, withAuthor bool) templ.Component {
 		var templ_7745c5c3_Var65 string
 		templ_7745c5c3_Var65, templ_7745c5c3_Err = templ.JoinStringErrs(head)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `doc.templ`, Line: 492, Col: 14}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `doc.templ`, Line: 523, Col: 14}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var65))
 		if templ_7745c5c3_Err != nil {
@@ -1784,7 +1788,7 @@ func docList(head string, docRows []*DocRow, withAuthor bool) templ.Component {
 			var templ_7745c5c3_Var66 string
 			templ_7745c5c3_Var66, templ_7745c5c3_Err = templ.JoinStringErrs(colspan)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `doc.templ`, Line: 518, Col: 41}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `doc.templ`, Line: 549, Col: 41}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var66))
 			if templ_7745c5c3_Err != nil {
