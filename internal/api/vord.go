@@ -67,14 +67,16 @@ func (sc *StateCtx) commitVord(vord *db.Vord, majorityRule bool) (VordFlags, err
 	return 0, nil
 }
 
-func (sc *StateCtx) findAndCommitVord() error {
-	return sc.TxWith(pgx.TxOptions{IsoLevel: pgx.ReadCommitted}, func(sc *StateCtx) error {
+func (sc *StateCtx) findAndCommitVord() (error, float64) {
+	lag := 0.0
+	err := sc.TxWith(pgx.TxOptions{IsoLevel: pgx.ReadCommitted}, func(sc *StateCtx) error {
 		row, err := sc.Queries.FindVordForCommit(sc.Ctx)
 		if err != nil {
 			return err // may be sql.ErrNoRows
 		}
 
 		ctxlog.Info(sc.Ctx, "autocommit: committing vord", "doc_id", row.Doc.ID)
+		lag = float64(time.Now().Sub(row.Vord.FinishAt).Microseconds()) / 1000.0 // ms
 		flags, err := sc.commitVord(&row.Vord, utils.TestFlags(row.Doc.Flags, DocFlagMajority))
 
 		var delay time.Duration
@@ -110,10 +112,10 @@ func (sc *StateCtx) findAndCommitVord() error {
 		ctxlog.Info(sc.Ctx, "autocommit: creating new vord", "doc_id", row.Doc.ID)
 		return sc.CreateVord(row.Doc.ID, row.Doc.VordDuration)
 	})
+	return err, lag
 }
 
 func (sc *StateCtx) RunAutocommit() {
-	sc.TasksWG.Add(1)
 	defer sc.TasksWG.Done()
 
 	for {
@@ -122,8 +124,9 @@ func (sc *StateCtx) RunAutocommit() {
 			break
 		}
 
-		err := sc.findAndCommitVord()
+		err, lag := sc.findAndCommitVord()
 		if err == nil {
+			ctxlog.Info(sc.Ctx, "autocommit: success", "lag", lag)
 			continue // on success, immediately try to commit another
 		}
 

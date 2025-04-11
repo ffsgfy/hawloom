@@ -160,7 +160,7 @@ templ VerList(verRows []*VerRow) {
                     @verListRow(row)
                 }
             } else {
-                <td colspan="4" class="p-1 text-center border-t border-t-gray-500">No data</td>
+                <tr><td colspan="4" class="p-1 text-center border-t border-t-gray-500">No data</td></tr>
             }
         </tbody>
     </table>
@@ -173,9 +173,16 @@ templ verListStub() {
 }
 
 templ verListHead(docID uuid.UUID, vordNum int32) {
+    {{
+        trigger := "click, load"
+        if vordNum < 0 {
+            trigger += ", every 2s"
+        }
+    }}
+
     @formPad()
     <div class="flex flex-row items-center mb-1">
-        <span id="btn-versions" hx-get="/ver/list" hx-include="body" hx-target="#ver-list" hx-trigger="click, load" class="hover:cursor-pointer">
+        <span id="btn-versions" hx-get="/ver/list" hx-include="body" hx-target="#ver-list" hx-trigger={ trigger } class="hover:cursor-pointer">
             Versions
         </span>
 

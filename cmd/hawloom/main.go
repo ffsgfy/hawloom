@@ -47,6 +47,7 @@ func main() {
 		autocommitCtx, autocommitCancel := context.WithCancel(ctx)
 		autocommitCtx = ctxlog.With(autocommitCtx, "task_num", i)
 		state.TasksCancel = append(state.TasksCancel, autocommitCancel)
+		state.TasksWG.Add(1)
 		go state.Ctx(autocommitCtx).RunAutocommit()
 	}
 
