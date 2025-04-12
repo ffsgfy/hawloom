@@ -1,21 +1,38 @@
 package main
 
 import (
+	"math/rand/v2"
 	"slices"
 	"strings"
 
 	"github.com/mb-14/gomarkov"
 )
 
+type rngWrapper struct {
+	rand.Rand
+}
+
+func NewRNG() *rngWrapper {
+	return &rngWrapper{
+		Rand: *rand.New(rand.NewPCG(rand.Uint64(), rand.Uint64())),
+	}
+}
+
+func (rng *rngWrapper) Intn(n int) int {
+	return rng.IntN(n)
+}
+
 type TextGenerator struct {
 	chain *gomarkov.Chain
 	ngram gomarkov.NGram
+	rng   gomarkov.PRNG
 }
 
 func NewTextGenerator(chain *gomarkov.Chain) *TextGenerator {
 	res := TextGenerator{
 		chain: chain,
 		ngram: make(gomarkov.NGram, chain.Order),
+		rng:   NewRNG(),
 	}
 	res.Reset()
 	return &res
@@ -25,6 +42,7 @@ func (g *TextGenerator) Clone() *TextGenerator {
 	return &TextGenerator{
 		chain: g.chain,
 		ngram: slices.Clone(g.ngram),
+		rng:   NewRNG(),
 	}
 }
 
@@ -46,7 +64,7 @@ func (g *TextGenerator) Seed(source []string) {
 }
 
 func (g *TextGenerator) Generate() string {
-	if next, err := g.chain.Generate(g.ngram); err == nil {
+	if next, err := g.chain.GenerateDeterministic(g.ngram, g.rng); err == nil {
 		for i := range len(g.ngram) - 1 {
 			g.ngram[i] = g.ngram[i+1]
 		}

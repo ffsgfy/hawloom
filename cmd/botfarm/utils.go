@@ -28,7 +28,10 @@ func checkResponseOK(resp *http.Response) error {
 	return fmt.Errorf("request status %d (%v): %s", resp.StatusCode, resp.Request.URL, string(body))
 }
 
-func readResponse(resp *http.Response, err error) ([]byte, error) {
+func readResponse(resp *http.Response, err error, th *timerHandle) ([]byte, error) {
+	if th != nil {
+		defer th.Stop()
+	}
 	if err != nil {
 		return nil, fmt.Errorf("request error (%v): %w", resp.Request.URL, err)
 	}
@@ -43,8 +46,8 @@ func readResponse(resp *http.Response, err error) ([]byte, error) {
 	}
 }
 
-func parseResponse(resp *http.Response, err error) (*goquery.Document, error) {
-	body, err := readResponse(resp, err)
+func parseResponse(resp *http.Response, err error, th *timerHandle) (*goquery.Document, error) {
+	body, err := readResponse(resp, err, th)
 	if err != nil {
 		return nil, err
 	}

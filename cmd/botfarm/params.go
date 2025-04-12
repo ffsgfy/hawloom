@@ -4,9 +4,14 @@ const (
 	baseURL     = "http://localhost:22440"
 	botPassword = "qwerty"
 
-	numClients = 500
-	numDocs    = 100
-	numVers    = 10
+	numClients = 30
+	numDocs    = 10
+	numVers    = 5
+
+	// Stress test configurations:
+	// numClients = 10, 50, 200, 500, 1500, 2300, 3000
+	// numDocs    = 5,  20, 50,  200, 500,  700,  1000
+	// numVers    = 5,  10, 15,  20,  30,   40,   50
 
 	markovChainOrder  = 3
 	docTitleLen       = 24
@@ -17,5 +22,5 @@ const (
 	editMax           = 100
 	vordDurationMin   = 10
 	vordDurationMax   = 30
-	actionPeriod      = 2.0
+	actionPeriod      = 1.0
 )

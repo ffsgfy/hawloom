@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"math/rand/v2"
@@ -121,6 +122,7 @@ func main() {
 	defer cancel()
 
 	sourcePath := flag.String("source", "", "markov chain source text path")
+	timingsPath := flag.String("timings", "", "timings data output path")
 	flag.Parse()
 
 	source, err := os.ReadFile(*sourcePath)
@@ -173,6 +175,7 @@ func main() {
 	}
 	docs = safeSlice(docs, 0, numDocs)
 
+	start := time.Now()
 	wg := sync.WaitGroup{}
 	for _, client := range clients {
 		wg.Add(1)
@@ -180,5 +183,29 @@ func main() {
 	}
 
 	<-ctx.Done()
+	dt := time.Now().Sub(start).Seconds()
 	wg.Wait()
+	ctxlog.Info(ctx, "all done", "dt", dt)
+
+	timings := NewTimer()
+	for _, client := range clients {
+		timings.Merge(client.timer)
+	}
+
+	timingsData, err := json.Marshal(timings)
+	if err != nil {
+		panic(err)
+	}
+	if *timingsPath != "" {
+		ctxlog.Info(ctx, "dumping timings to file", "path", *timingsPath)
+		if err = os.WriteFile(*timingsPath, timingsData, 0o644); err != nil {
+			panic(err)
+		}
+	} else {
+		ctxlog.Info(ctx, "dumping timings to stdout")
+		if _, err = os.Stdout.Write(timingsData); err != nil {
+			panic(err)
+		}
+		fmt.Println()
+	}
 }

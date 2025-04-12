@@ -16,6 +16,7 @@ type Client struct {
 	username string
 	client   *http.Client
 	gen      *TextGenerator
+	timer    Timer
 }
 
 func NewClient(username string, gen *TextGenerator) *Client {
@@ -26,7 +27,8 @@ func NewClient(username string, gen *TextGenerator) *Client {
 			Transport: http.DefaultTransport,
 			Jar:       jar,
 		},
-		gen: gen,
+		gen:   gen,
+		timer: NewTimer(),
 	}
 }
 
@@ -36,17 +38,19 @@ func (c *Client) Auth() error {
 	vals.Set("password", botPassword)
 	vals.Set("password-re", botPassword)
 
+	th := c.timer.Start("register")
 	resp, err := c.client.PostForm(baseURL+"/auth/register", vals)
-	if _, err = readResponse(resp, err); err != nil {
+	if _, err = readResponse(resp, err, th); err != nil {
 		return err
 	}
 
+	th = c.timer.Start("login")
 	resp, err = c.client.PostForm(baseURL+"/auth/login", vals)
-	if _, err = readResponse(resp, err); err != nil {
+	if _, err = readResponse(resp, err, th); err != nil {
 		return err
 	}
 
-	return checkResponseOK(resp)
+	return nil
 }
 
 func findDocID(doc *goquery.Document) (string, error) {
@@ -72,8 +76,9 @@ func (c *Client) NewDoc() (string, error) {
 	vals.Set("public", "true")
 	vals.Set("majority", "false")
 
+	th := c.timer.Start("new_doc")
 	resp, err := c.client.PostForm(baseURL+"/doc/new", vals)
-	doc, err := parseResponse(resp, err)
+	doc, err := parseResponse(resp, err, th)
 	if err != nil {
 		return "", err
 	}
@@ -86,8 +91,9 @@ func (c *Client) NewDoc() (string, error) {
 }
 
 func (c *Client) GetDoc(docPath string) (string, string, error) {
+	th := c.timer.Start("get_doc")
 	resp, err := c.client.Get(baseURL + docPath)
-	doc, err := parseResponse(resp, err)
+	doc, err := parseResponse(resp, err, th)
 	if err != nil {
 		return "", "", err
 	}
@@ -101,8 +107,9 @@ func (c *Client) GetDoc(docPath string) (string, string, error) {
 }
 
 func (c *Client) GetDocList(username string) ([]string, error) {
+	th := c.timer.Start("get_doc_list")
 	resp, err := c.client.Get(baseURL + "/user/" + username)
-	doc, err := parseResponse(resp, err)
+	doc, err := parseResponse(resp, err, th)
 	if err != nil {
 		return nil, err
 	}
@@ -146,8 +153,9 @@ func (c *Client) NewVer(docID, content string) error {
 	vals.Set("content", content)
 	vals.Set("summary", summary)
 
+	th := c.timer.Start("new_ver")
 	resp, err := c.client.PostForm(baseURL+"/ver/new", vals)
-	_, err = parseResponse(resp, err)
+	_, err = parseResponse(resp, err, th)
 
 	return err
 }
@@ -157,8 +165,9 @@ func (c *Client) DeleteVer(verPath string) error {
 	if err != nil {
 		return err
 	}
+	th := c.timer.Start("delete_ver")
 	resp, err := c.client.Do(req)
-	_, err = readResponse(resp, err)
+	_, err = readResponse(resp, err, th)
 
 	return err
 }
@@ -170,8 +179,9 @@ type verListRow struct {
 }
 
 func (c *Client) GetVerList(docID string) ([]verListRow, error) {
+	th := c.timer.Start("get_ver_list")
 	resp, err := c.client.Get(baseURL + "/ver/list?vord-num=-1&doc-id=" + docID)
-	doc, err := parseResponse(resp, err)
+	doc, err := parseResponse(resp, err, th)
 	if err != nil {
 		return nil, err
 	}
@@ -203,13 +213,15 @@ func (c *Client) GetVerList(docID string) ([]verListRow, error) {
 }
 
 func (c *Client) VerVote(verPath string) error {
+	th := c.timer.Start("ver_vote")
 	resp, err := c.client.PostForm(baseURL+verPath+"/vote", nil)
-	_, err = readResponse(resp, err)
+	_, err = readResponse(resp, err, th)
 	return err
 }
 
 func (c *Client) VerUnvote(verPath string) error {
+	th := c.timer.Start("ver_unvote")
 	resp, err := c.client.PostForm(baseURL+verPath+"/unvote", nil)
-	_, err = readResponse(resp, err)
+	_, err = readResponse(resp, err, th)
 	return err
 }
