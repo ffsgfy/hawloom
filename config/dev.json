@@ -24,7 +24,12 @@
     },
     "doc": {
         "title_min_length": 6,
-        "title_max_length": 256
+        "title_max_length": 128,
+        "description_max_length": 4096
+    },
+    "ver": {
+        "summary_max_length": 256,
+        "content_max_length": 32768
     },
     "vord": {
         "min_duration": 10,

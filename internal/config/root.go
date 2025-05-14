@@ -45,6 +45,12 @@ type AccountConfig struct {
 type DocConfig struct {
 	TitleMinLength Value[int] `json:"title_min_length"`
 	TitleMaxLength Value[int] `json:"title_max_length"`
+	DescriptionMaxLength Value[int] `json:"description_max_length"`
+}
+
+type VerConfig struct {
+	SummaryMaxLength Value[int] `json:"summary_max_length"`
+	ContentMaxLength Value[int] `json:"content_max_length"`
 }
 
 type VordConfig struct {
@@ -64,6 +70,7 @@ type Config struct {
 	Auth    AuthConfig    `json:"auth"`
 	Account AccountConfig `json:"account"`
 	Doc     DocConfig     `json:"doc"`
+	Ver     VerConfig     `json:"ver"`
 	Vord    VordConfig    `json:"vord"`
 	Misc    MiscConfig    `json:"misc"`
 }

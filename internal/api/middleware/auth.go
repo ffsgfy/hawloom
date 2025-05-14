@@ -24,7 +24,6 @@ func ManageAuth(s *api.State) echo.MiddlewareFunc {
 				}
 			}
 
-			// TODO: auto-renew tokens that will soon expire
 			return next(c)
 		}
 	}

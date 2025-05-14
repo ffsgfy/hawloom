@@ -33,11 +33,15 @@ func (sc *StateCtx) CreateDoc(params *CreateDocParams) (*db.Doc, *db.Ver, error)
 	if len(params.Title) > sc.Config.Doc.TitleMaxLength.V {
 		return nil, nil, ErrDocTitleTooLong
 	}
+	if len(params.Description) > sc.Config.Doc.DescriptionMaxLength.V {
+		return nil, nil, ErrDocDescriptionTooLong
+	}
+	if len(params.Content) > sc.Config.Ver.ContentMaxLength.V {
+		return nil, nil, ErrVerContentTooLong
+	}
 	if params.VordDuration < sc.Config.Vord.MinDuration.V {
 		return nil, nil, ErrRoundDurationTooSmall
 	}
-
-	// TODO: limit max description/content size
 
 	authToken, err := GetValidAuthToken(sc.Ctx)
 	if err != nil {

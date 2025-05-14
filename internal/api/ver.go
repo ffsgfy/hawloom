@@ -17,12 +17,17 @@ type CreateVerParams struct {
 }
 
 func (sc *StateCtx) CreateVer(params *CreateVerParams) (*db.Ver, error) {
+	if len(params.Summary) > sc.Config.Ver.SummaryMaxLength.V {
+		return nil, ErrVerSummaryTooLong
+	}
+	if len(params.Content) > sc.Config.Ver.ContentMaxLength.V {
+		return nil, ErrVerContentTooLong
+	}
+
 	authToken, err := GetValidAuthToken(sc.Ctx)
 	if err != nil {
 		return nil, err
 	}
-
-	// TODO: limit max summary/content size
 
 	var ver *db.Ver
 

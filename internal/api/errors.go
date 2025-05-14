@@ -31,7 +31,10 @@ var (
 
 	ErrDocTitleTooShort      = echo.NewHTTPError(http.StatusBadRequest, "document title too short")
 	ErrDocTitleTooLong       = echo.NewHTTPError(http.StatusBadRequest, "document title too long")
+	ErrDocDescriptionTooLong = echo.NewHTTPError(http.StatusBadRequest, "document description too long")
 	ErrRoundDurationTooSmall = echo.NewHTTPError(http.StatusBadRequest, "voting round duration too small")
+	ErrVerSummaryTooLong     = echo.NewHTTPError(http.StatusBadRequest, "version summary too long")
+	ErrVerContentTooLong     = echo.NewHTTPError(http.StatusBadRequest, "version content too long")
 	ErrDocNotFound           = echo.NewHTTPError(http.StatusNotFound, "document not found")
 	ErrVerNotFound           = echo.NewHTTPError(http.StatusNotFound, "version not found")
 	ErrDeletePastVer         = echo.NewHTTPError(http.StatusConflict, "cannot delete past version")
